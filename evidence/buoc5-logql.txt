@@ -1,0 +1,751 @@
+================================================================================
+ EVIDENCE BƯỚC 5: TRUY VẤN LOGQL QUA LOKI API (/loki/api/v1/query_range)
+ Thời gian: Mon Oct 19 09:20:21 PM +07 2026
+ MSSV: dtc245340007 - NGUYEN THI QUYNH THO
+ Loki Endpoint: http://172.28.0.4:3100
+================================================================================
+
+### Q1: Lỗi HTTP 5xx của Nginx
+Query: {job="nginx"} |~ "\" 5[0-9]{2} "
+Mô tả: Lọc toàn bộ access log của Nginx có chứa mã phản hồi HTTP 5xx (500, 502, 503, 504).
+--- JSON Output ---
+{
+  "status": "success",
+  "data": {
+    "resultType": "streams",
+    "result": [
+      {
+        "stream": {
+          "compose_service": "nginx",
+          "container": "crm-nginx-1",
+          "job": "nginx",
+          "status": "502"
+        },
+        "values": [
+          [
+            "1792417873860226576",
+            "172.26.0.1 - - [19/Oct/2026:13:51:13 +0000] \"HEAD /pgadmin/ HTTP/2.0\" 502 0 \"-\" \"curl/8.18.0\" rt=0.003 uct=\"-\" uht=\"-\" urt=\"0.003\" xff=\"-\""
+          ]
+        ]
+      }
+    ],
+    "stats": {
+      "summary": {
+        "bytesProcessedPerSecond": 276927,
+        "linesProcessedPerSecond": 1689,
+        "totalBytesProcessed": 148180,
+        "totalLinesProcessed": 904,
+        "execTime": 0.535085,
+        "queueTime": 5.488748,
+        "subqueries": 0,
+        "totalEntriesReturned": 1,
+        "splits": 3,
+        "shards": 48,
+        "totalPostFilterLines": 1,
+        "totalStructuredMetadataBytesProcessed": 0
+      },
+      "querier": {
+        "store": {
+          "totalChunksRef": 0,
+          "totalChunksDownloaded": 0,
+          "chunksDownloadTime": 0,
+          "chunk": {
+            "headChunkBytes": 0,
+            "headChunkLines": 0,
+            "decompressedBytes": 0,
+            "decompressedLines": 0,
+            "compressedBytes": 0,
+            "totalDuplicates": 0,
+            "postFilterLines": 0,
+            "headChunkStructuredMetadataBytes": 0,
+            "decompressedStructuredMetadataBytes": 0
+          }
+        }
+      },
+      "ingester": {
+        "totalReached": 48,
+        "totalChunksMatched": 10,
+        "totalBatches": 49,
+        "totalLinesSent": 1,
+        "store": {
+          "totalChunksRef": 3,
+          "totalChunksDownloaded": 3,
+          "chunksDownloadTime": 70071748,
+          "chunk": {
+            "headChunkBytes": 77669,
+            "headChunkLines": 513,
+            "decompressedBytes": 70511,
+            "decompressedLines": 391,
+            "compressedBytes": 4557,
+            "totalDuplicates": 0,
+            "postFilterLines": 1,
+            "headChunkStructuredMetadataBytes": 0,
+            "decompressedStructuredMetadataBytes": 0
+          }
+        }
+      },
+      "cache": {
+        "chunk": {
+          "entriesFound": 0,
+          "entriesRequested": 0,
+          "entriesStored": 0,
+          "bytesReceived": 0,
+          "bytesSent": 0,
+          "requests": 0,
+          "downloadTime": 0
+        },
+        "index": {
+          "entriesFound": 0,
+          "entriesRequested": 0,
+          "entriesStored": 0,
+          "bytesReceived": 0,
+          "bytesSent": 0,
+          "requests": 0,
+          "downloadTime": 0
+        },
+        "result": {
+          "entriesFound": 0,
+          "entriesRequested": 0,
+          "entriesStored": 0,
+          "bytesReceived": 0,
+          "bytesSent": 0,
+          "requests": 0,
+          "downloadTime": 0
+        },
+        "statsResult": {
+          "entriesFound": 0,
+          "entriesRequested": 0,
+          "entriesStored": 0,
+          "bytesReceived": 0,
+          "bytesSent": 0,
+          "requests": 0,
+          "downloadTime": 0
+        }
+      }
+    }
+  }
+}
+
+### Q2: Lỗi/ngoại lệ ứng dụng Flask CRM Webapp
+Query: {job="webapp"} |~ "(?i)(error|exception|fail)"
+Mô tả: Lọc các dòng log chứa từ khóa error, exception, fail (không phân biệt hoa thường).
+--- JSON Output (Top 5 mẫu) ---
+{
+  "status": "success",
+  "data": {
+    "resultType": "streams",
+    "result": [
+      {
+        "stream": {
+          "compose_service": "web",
+          "container": "crm-web-1",
+          "job": "webapp"
+        },
+        "values": [
+          [
+            "1792419581763603324",
+            "LOGIN_FAILED ip=172.26.0.1 user=admin reason=wrong_password"
+          ],
+          [
+            "1792419377940303451",
+            "LOGIN_FAILED ip=172.26.0.1 user=admin reason=wrong_password"
+          ],
+          [
+            "1792419330129901943",
+            "LOGIN_FAILED ip=172.26.0.1 user=admin reason=wrong_password"
+          ],
+          [
+            "1792419145291599078",
+            "LOGIN_FAILED ip=192.168.207.128 user=admin reason=wrong_password"
+          ],
+          [
+            "1792418724625690650",
+            "LOGIN_FAILED ip=192.168.207.1 user=admin reason=wrong_password"
+          ]
+        ]
+      }
+    ],
+    "stats": {
+      "summary": {
+        "bytesProcessedPerSecond": 2091,
+        "linesProcessedPerSecond": 33,
+        "totalBytesProcessed": 935,
+        "totalLinesProcessed": 15,
+        "execTime": 0.446995,
+        "queueTime": 2.369807,
+        "subqueries": 0,
+        "totalEntriesReturned": 5,
+        "splits": 1,
+        "shards": 16,
+        "totalPostFilterLines": 6,
+        "totalStructuredMetadataBytesProcessed": 0
+      },
+      "querier": {
+        "store": {
+          "totalChunksRef": 0,
+          "totalChunksDownloaded": 0,
+          "chunksDownloadTime": 0,
+          "chunk": {
+            "headChunkBytes": 0,
+            "headChunkLines": 0,
+            "decompressedBytes": 0,
+            "decompressedLines": 0,
+            "compressedBytes": 0,
+            "totalDuplicates": 0,
+            "postFilterLines": 0,
+            "headChunkStructuredMetadataBytes": 0,
+            "decompressedStructuredMetadataBytes": 0
+          }
+        }
+      },
+      "ingester": {
+        "totalReached": 16,
+        "totalChunksMatched": 1,
+        "totalBatches": 16,
+        "totalLinesSent": 5,
+        "store": {
+          "totalChunksRef": 0,
+          "totalChunksDownloaded": 0,
+          "chunksDownloadTime": 0,
+          "chunk": {
+            "headChunkBytes": 935,
+            "headChunkLines": 15,
+            "decompressedBytes": 0,
+            "decompressedLines": 0,
+            "compressedBytes": 0,
+            "totalDuplicates": 0,
+            "postFilterLines": 6,
+            "headChunkStructuredMetadataBytes": 0,
+            "decompressedStructuredMetadataBytes": 0
+          }
+        }
+      },
+      "cache": {
+        "chunk": {
+          "entriesFound": 0,
+          "entriesRequested": 0,
+          "entriesStored": 0,
+          "bytesReceived": 0,
+          "bytesSent": 0,
+          "requests": 0,
+          "downloadTime": 0
+        },
+        "index": {
+          "entriesFound": 0,
+          "entriesRequested": 0,
+          "entriesStored": 0,
+          "bytesReceived": 0,
+          "bytesSent": 0,
+          "requests": 0,
+          "downloadTime": 0
+        },
+        "result": {
+          "entriesFound": 0,
+          "entriesRequested": 0,
+          "entriesStored": 0,
+          "bytesReceived": 0,
+          "bytesSent": 0,
+          "requests": 0,
+          "downloadTime": 0
+        },
+        "statsResult": {
+          "entriesFound": 0,
+          "entriesRequested": 0,
+          "entriesStored": 0,
+          "bytesReceived": 0,
+          "bytesSent": 0,
+          "requests": 0,
+          "downloadTime": 0
+        }
+      }
+    }
+  }
+}
+
+### Q3: Đăng nhập thất bại (LOGIN_FAILED)
+Query: {job="webapp"} |= "LOGIN_FAILED"
+Mô tả: Lọc chính xác các sự kiện đăng nhập thất bại do ứng dụng CRM web ghi nhận.
+--- JSON Output (Top 5 mẫu) ---
+{
+  "status": "success",
+  "data": {
+    "resultType": "streams",
+    "result": [
+      {
+        "stream": {
+          "compose_service": "web",
+          "container": "crm-web-1",
+          "job": "webapp"
+        },
+        "values": [
+          [
+            "1792419581763603324",
+            "LOGIN_FAILED ip=172.26.0.1 user=admin reason=wrong_password"
+          ],
+          [
+            "1792419377940303451",
+            "LOGIN_FAILED ip=172.26.0.1 user=admin reason=wrong_password"
+          ],
+          [
+            "1792419330129901943",
+            "LOGIN_FAILED ip=172.26.0.1 user=admin reason=wrong_password"
+          ],
+          [
+            "1792419145291599078",
+            "LOGIN_FAILED ip=192.168.207.128 user=admin reason=wrong_password"
+          ],
+          [
+            "1792418724625690650",
+            "LOGIN_FAILED ip=192.168.207.1 user=admin reason=wrong_password"
+          ]
+        ]
+      }
+    ],
+    "stats": {
+      "summary": {
+        "bytesProcessedPerSecond": 2334,
+        "linesProcessedPerSecond": 37,
+        "totalBytesProcessed": 935,
+        "totalLinesProcessed": 15,
+        "execTime": 0.400551,
+        "queueTime": 2.61191,
+        "subqueries": 0,
+        "totalEntriesReturned": 5,
+        "splits": 1,
+        "shards": 16,
+        "totalPostFilterLines": 6,
+        "totalStructuredMetadataBytesProcessed": 0
+      },
+      "querier": {
+        "store": {
+          "totalChunksRef": 0,
+          "totalChunksDownloaded": 0,
+          "chunksDownloadTime": 0,
+          "chunk": {
+            "headChunkBytes": 0,
+            "headChunkLines": 0,
+            "decompressedBytes": 0,
+            "decompressedLines": 0,
+            "compressedBytes": 0,
+            "totalDuplicates": 0,
+            "postFilterLines": 0,
+            "headChunkStructuredMetadataBytes": 0,
+            "decompressedStructuredMetadataBytes": 0
+          }
+        }
+      },
+      "ingester": {
+        "totalReached": 16,
+        "totalChunksMatched": 1,
+        "totalBatches": 16,
+        "totalLinesSent": 5,
+        "store": {
+          "totalChunksRef": 0,
+          "totalChunksDownloaded": 0,
+          "chunksDownloadTime": 0,
+          "chunk": {
+            "headChunkBytes": 935,
+            "headChunkLines": 15,
+            "decompressedBytes": 0,
+            "decompressedLines": 0,
+            "compressedBytes": 0,
+            "totalDuplicates": 0,
+            "postFilterLines": 6,
+            "headChunkStructuredMetadataBytes": 0,
+            "decompressedStructuredMetadataBytes": 0
+          }
+        }
+      },
+      "cache": {
+        "chunk": {
+          "entriesFound": 0,
+          "entriesRequested": 0,
+          "entriesStored": 0,
+          "bytesReceived": 0,
+          "bytesSent": 0,
+          "requests": 0,
+          "downloadTime": 0
+        },
+        "index": {
+          "entriesFound": 0,
+          "entriesRequested": 0,
+          "entriesStored": 0,
+          "bytesReceived": 0,
+          "bytesSent": 0,
+          "requests": 0,
+          "downloadTime": 0
+        },
+        "result": {
+          "entriesFound": 0,
+          "entriesRequested": 0,
+          "entriesStored": 0,
+          "bytesReceived": 0,
+          "bytesSent": 0,
+          "requests": 0,
+          "downloadTime": 0
+        },
+        "statsResult": {
+          "entriesFound": 0,
+          "entriesRequested": 0,
+          "entriesStored": 0,
+          "bytesReceived": 0,
+          "bytesSent": 0,
+          "requests": 0,
+          "downloadTime": 0
+        }
+      }
+    }
+  }
+}
+
+### Q4: Thống kê số lần login fail theo phút
+Query: sum(count_over_time({job="webapp"} |= "LOGIN_FAILED" [1m]))
+Mô tả: Metric query đếm tổng số dòng LOGIN_FAILED trong từng cửa sổ 1 phút.
+--- JSON Output (Ma trận mẫu theo thời gian) ---
+{
+  "status": "success",
+  "data": {
+    "resultType": "matrix",
+    "result": [
+      {
+        "metric": {},
+        "values": [
+          [
+            1792418054,
+            "10"
+          ],
+          [
+            1792418068,
+            "11"
+          ],
+          [
+            1792418082,
+            "11"
+          ],
+          [
+            1792418096,
+            "11"
+          ],
+          [
+            1792418110,
+            "1"
+          ],
+          [
+            1792418698,
+            "1"
+          ],
+          [
+            1792418712,
+            "1"
+          ],
+          [
+            1792418726,
+            "2"
+          ],
+          [
+            1792418740,
+            "2"
+          ],
+          [
+            1792418754,
+            "2"
+          ],
+          [
+            1792418768,
+            "1"
+          ],
+          [
+            1792418782,
+            "1"
+          ],
+          [
+            1792419146,
+            "1"
+          ],
+          [
+            1792419160,
+            "1"
+          ],
+          [
+            1792419174,
+            "1"
+          ],
+          [
+            1792419188,
+            "1"
+          ],
+          [
+            1792419202,
+            "1"
+          ],
+          [
+            1792419342,
+            "1"
+          ],
+          [
+            1792419356,
+            "1"
+          ],
+          [
+            1792419370,
+            "1"
+          ],
+          [
+            1792419384,
+            "2"
+          ],
+          [
+            1792419398,
+            "1"
+          ],
+          [
+            1792419412,
+            "1"
+          ],
+          [
+            1792419426,
+            "1"
+          ],
+          [
+            1792419594,
+            "1"
+          ],
+          [
+            1792419608,
+            "1"
+          ],
+          [
+            1792419622,
+            "1"
+          ],
+          [
+            1792419636,
+            "1"
+          ]
+        ]
+      }
+    ],
+    "stats": {
+      "summary": {
+        "bytesProcessedPerSecond": 986,
+        "linesProcessedPerSecond": 15,
+        "totalBytesProcessed": 2209,
+        "totalLinesProcessed": 35,
+        "execTime": 2.239402178,
+        "queueTime": 66.075661994,
+        "subqueries": 0,
+        "totalEntriesReturned": 1,
+        "splits": 3,
+        "shards": 48,
+        "totalPostFilterLines": 17,
+        "totalStructuredMetadataBytesProcessed": 0
+      },
+      "querier": {
+        "store": {
+          "totalChunksRef": 0,
+          "totalChunksDownloaded": 0,
+          "chunksDownloadTime": 0,
+          "chunk": {
+            "headChunkBytes": 0,
+            "headChunkLines": 0,
+            "decompressedBytes": 0,
+            "decompressedLines": 0,
+            "compressedBytes": 0,
+            "totalDuplicates": 0,
+            "postFilterLines": 0,
+            "headChunkStructuredMetadataBytes": 0,
+            "decompressedStructuredMetadataBytes": 0
+          }
+        }
+      },
+      "ingester": {
+        "totalReached": 48,
+        "totalChunksMatched": 2,
+        "totalBatches": 50,
+        "totalLinesSent": 17,
+        "store": {
+          "totalChunksRef": 0,
+          "totalChunksDownloaded": 0,
+          "chunksDownloadTime": 0,
+          "chunk": {
+            "headChunkBytes": 2209,
+            "headChunkLines": 35,
+            "decompressedBytes": 0,
+            "decompressedLines": 0,
+            "compressedBytes": 0,
+            "totalDuplicates": 0,
+            "postFilterLines": 17,
+            "headChunkStructuredMetadataBytes": 0,
+            "decompressedStructuredMetadataBytes": 0
+          }
+        }
+      },
+      "cache": {
+        "chunk": {
+          "entriesFound": 0,
+          "entriesRequested": 0,
+          "entriesStored": 0,
+          "bytesReceived": 0,
+          "bytesSent": 0,
+          "requests": 0,
+          "downloadTime": 0
+        },
+        "index": {
+          "entriesFound": 0,
+          "entriesRequested": 0,
+          "entriesStored": 0,
+          "bytesReceived": 0,
+          "bytesSent": 0,
+          "requests": 0,
+          "downloadTime": 0
+        },
+        "result": {
+          "entriesFound": 0,
+          "entriesRequested": 0,
+          "entriesStored": 0,
+          "bytesReceived": 0,
+          "bytesSent": 0,
+          "requests": 0,
+          "downloadTime": 0
+        },
+        "statsResult": {
+          "entriesFound": 0,
+          "entriesRequested": 0,
+          "entriesStored": 0,
+          "bytesReceived": 0,
+          "bytesSent": 0,
+          "requests": 0,
+          "downloadTime": 0
+        }
+      }
+    }
+  }
+}
+
+### Q5: PostgreSQL log lỗi (error/fatal/panic)
+Query: {job="postgres"} |~ "(?i)(error|fatal|panic)"
+Mô tả: Lọc các dòng log ghi nhận lỗi từ hệ quản trị cơ sở dữ liệu PostgreSQL.
+--- JSON Output ---
+{
+  "status": "success",
+  "data": {
+    "resultType": "streams",
+    "result": [
+      {
+        "stream": {
+          "compose_service": "db",
+          "container": "crm-db-1",
+          "job": "postgres"
+        },
+        "values": [
+          [
+            "1792419377409302847",
+            "2026-10-19 14:16:17.408 UTC [19480] ERROR:  permission denied for schema public at character 14"
+          ],
+          [
+            "1792419376753979746",
+            "2026-10-19 14:16:16.753 UTC [19471] ERROR:  must be owner of table customers"
+          ]
+        ]
+      }
+    ],
+    "stats": {
+      "summary": {
+        "bytesProcessedPerSecond": 713,
+        "linesProcessedPerSecond": 6,
+        "totalBytesProcessed": 669,
+        "totalLinesProcessed": 6,
+        "execTime": 0.937395,
+        "queueTime": 20.262131,
+        "subqueries": 0,
+        "totalEntriesReturned": 2,
+        "splits": 3,
+        "shards": 48,
+        "totalPostFilterLines": 2,
+        "totalStructuredMetadataBytesProcessed": 0
+      },
+      "querier": {
+        "store": {
+          "totalChunksRef": 0,
+          "totalChunksDownloaded": 0,
+          "chunksDownloadTime": 0,
+          "chunk": {
+            "headChunkBytes": 0,
+            "headChunkLines": 0,
+            "decompressedBytes": 0,
+            "decompressedLines": 0,
+            "compressedBytes": 0,
+            "totalDuplicates": 0,
+            "postFilterLines": 0,
+            "headChunkStructuredMetadataBytes": 0,
+            "decompressedStructuredMetadataBytes": 0
+          }
+        }
+      },
+      "ingester": {
+        "totalReached": 48,
+        "totalChunksMatched": 2,
+        "totalBatches": 49,
+        "totalLinesSent": 2,
+        "store": {
+          "totalChunksRef": 0,
+          "totalChunksDownloaded": 0,
+          "chunksDownloadTime": 0,
+          "chunk": {
+            "headChunkBytes": 669,
+            "headChunkLines": 6,
+            "decompressedBytes": 0,
+            "decompressedLines": 0,
+            "compressedBytes": 0,
+            "totalDuplicates": 0,
+            "postFilterLines": 2,
+            "headChunkStructuredMetadataBytes": 0,
+            "decompressedStructuredMetadataBytes": 0
+          }
+        }
+      },
+      "cache": {
+        "chunk": {
+          "entriesFound": 0,
+          "entriesRequested": 0,
+          "entriesStored": 0,
+          "bytesReceived": 0,
+          "bytesSent": 0,
+          "requests": 0,
+          "downloadTime": 0
+        },
+        "index": {
+          "entriesFound": 0,
+          "entriesRequested": 0,
+          "entriesStored": 0,
+          "bytesReceived": 0,
+          "bytesSent": 0,
+          "requests": 0,
+          "downloadTime": 0
+        },
+        "result": {
+          "entriesFound": 0,
+          "entriesRequested": 0,
+          "entriesStored": 0,
+          "bytesReceived": 0,
+          "bytesSent": 0,
+          "requests": 0,
+          "downloadTime": 0
+        },
+        "statsResult": {
+          "entriesFound": 0,
+          "entriesRequested": 0,
+          "entriesStored": 0,
+          "bytesReceived": 0,
+          "bytesSent": 0,
+          "requests": 0,
+          "downloadTime": 0
+        }
+      }
+    }
+  }
+}
+
+================================================================================
+ HOÀN TẤT THỰC HIỆN 5 CÂU TRUY VẤN LOGQL
+================================================================================

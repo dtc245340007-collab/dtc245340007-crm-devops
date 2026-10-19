@@ -1,0 +1,232 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 920" width="100%" height="100%" style="background-color: #ffffff; font-family: 'Segoe UI', Arial, sans-serif;">
+  <defs>
+    <!-- Arrowhead markers -->
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#2b2b2b" />
+    </marker>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.08"/>
+    </filter>
+  </defs>
+
+  <!-- 1. DIAGRAM TITLE -->
+  <text x="490" y="38" text-anchor="middle" font-size="22" font-weight="700" fill="#111827" letter-spacing="0.5">
+    Sơ đồ kiến trúc hệ thống CRM Chăm sóc Khách hàng
+  </text>
+
+  <!-- 2. ACTOR: NGƯỜI DÙNG -->
+  <g transform="translate(740, 60)">
+    <!-- Head -->
+    <circle cx="0" cy="18" r="14" fill="#ffffff" stroke="#2b2b2b" stroke-width="2"/>
+    <!-- Body -->
+    <line x1="0" y1="32" x2="0" y2="72" stroke="#2b2b2b" stroke-width="2"/>
+    <!-- Arms -->
+    <line x1="-24" y1="46" x2="24" y2="46" stroke="#2b2b2b" stroke-width="2"/>
+    <!-- Legs -->
+    <line x1="0" y1="72" x2="-20" y2="105" stroke="#2b2b2b" stroke-width="2"/>
+    <line x1="0" y1="72" x2="20" y2="105" stroke="#2b2b2b" stroke-width="2"/>
+    <!-- Label -->
+    <text x="0" y="125" text-anchor="middle" font-size="14" font-weight="600" fill="#1f2937">Người dùng</text>
+  </g>
+
+  <!-- LINE: DOCKER COMPOSE BOUNDARY LINE -->
+  <line x1="20" y1="230" x2="960" y2="230" stroke="#374151" stroke-width="1.8"/>
+  <text x="490" y="246" text-anchor="middle" font-size="15" font-weight="700" fill="#1f2937">
+    Docker Compose (máy chủ Ubuntu)
+  </text>
+
+  <!-- ARROW: NGƯỜI DÙNG -> NGINX (HTTPS) -->
+  <line x1="740" y1="180" x2="740" y2="280" stroke="#2b2b2b" stroke-width="1.8" marker-end="url(#arrow)"/>
+  <rect x="748" y="202" width="55" height="18" rx="2" fill="#ffffff" stroke="#e5e7eb" stroke-width="1"/>
+  <text x="775" y="215" text-anchor="middle" font-size="11" font-weight="600" fill="#1f2937">HTTPS</text>
+
+  <!-- ========================================================================= -->
+  <!-- LEFT FRAME: GIÁM SÁT VÀ LOG TẬP TRUNG -->
+  <!-- ========================================================================= -->
+  <g transform="translate(30, 275)">
+    <!-- 3D Box Boundary -->
+    <rect x="0" y="0" width="490" height="610" rx="4" fill="#ffffff" stroke="#374151" stroke-width="1.8" filter="url(#shadow)"/>
+    <!-- Inner border for 3D frame look -->
+    <polyline points="0,15 15,0 490,0 490,595 475,610" fill="none" stroke="#4b5563" stroke-width="1.2"/>
+    <text x="245" y="32" text-anchor="middle" font-size="16" font-weight="700" fill="#111827">
+      Giám sát và log tập trung
+    </text>
+
+    <!-- COMPONENT: GRAFANA -->
+    <g transform="translate(165, 60)">
+      <rect x="0" y="0" width="160" height="70" rx="4" fill="#f9fafb" stroke="#374151" stroke-width="1.6"/>
+      <!-- UML Component Icon -->
+      <rect x="135" y="8" width="16" height="12" fill="#ffffff" stroke="#374151" stroke-width="1.2"/>
+      <rect x="132" y="10" width="6" height="3" fill="#ffffff" stroke="#374151" stroke-width="1"/>
+      <rect x="132" y="15" width="6" height="3" fill="#ffffff" stroke="#374151" stroke-width="1"/>
+      <!-- Text -->
+      <text x="75" y="42" text-anchor="middle" font-size="15" font-weight="700" fill="#111827">Grafana</text>
+    </g>
+
+    <!-- COMPONENT: LOKI -->
+    <g transform="translate(40, 235)">
+      <rect x="0" y="0" width="160" height="70" rx="4" fill="#f9fafb" stroke="#374151" stroke-width="1.6"/>
+      <!-- UML Component Icon -->
+      <rect x="135" y="8" width="16" height="12" fill="#ffffff" stroke="#374151" stroke-width="1.2"/>
+      <rect x="132" y="10" width="6" height="3" fill="#ffffff" stroke="#374151" stroke-width="1"/>
+      <rect x="132" y="15" width="6" height="3" fill="#ffffff" stroke="#374151" stroke-width="1"/>
+      <!-- Text -->
+      <text x="75" y="42" text-anchor="middle" font-size="15" font-weight="700" fill="#111827">Loki</text>
+    </g>
+
+    <!-- COMPONENT: PROMETHEUS -->
+    <g transform="translate(290, 235)">
+      <rect x="0" y="0" width="160" height="70" rx="4" fill="#f9fafb" stroke="#374151" stroke-width="1.6"/>
+      <!-- UML Component Icon -->
+      <rect x="135" y="8" width="16" height="12" fill="#ffffff" stroke="#374151" stroke-width="1.2"/>
+      <rect x="132" y="10" width="6" height="3" fill="#ffffff" stroke="#374151" stroke-width="1"/>
+      <rect x="132" y="15" width="6" height="3" fill="#ffffff" stroke="#374151" stroke-width="1"/>
+      <!-- Text -->
+      <text x="75" y="42" text-anchor="middle" font-size="15" font-weight="700" fill="#111827">Prometheus</text>
+    </g>
+
+    <!-- COMPONENT: PROMTAIL -->
+    <g transform="translate(30, 485)">
+      <rect x="0" y="0" width="180" height="85" rx="4" fill="#f9fafb" stroke="#374151" stroke-width="1.6"/>
+      <!-- UML Component Icon -->
+      <rect x="155" y="8" width="16" height="12" fill="#ffffff" stroke="#374151" stroke-width="1.2"/>
+      <rect x="152" y="10" width="6" height="3" fill="#ffffff" stroke="#374151" stroke-width="1"/>
+      <rect x="152" y="15" width="6" height="3" fill="#ffffff" stroke="#374151" stroke-width="1"/>
+      <!-- Text -->
+      <text x="90" y="38" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">Promtail</text>
+      <text x="90" y="58" text-anchor="middle" font-size="11" fill="#4b5563">(đọc log container)</text>
+    </g>
+
+    <!-- COMPONENT: EXPORTERS -->
+    <g transform="translate(265, 485)">
+      <rect x="0" y="0" width="200" height="85" rx="4" fill="#f9fafb" stroke="#374151" stroke-width="1.6"/>
+      <!-- UML Component Icon -->
+      <rect x="175" y="8" width="16" height="12" fill="#ffffff" stroke="#374151" stroke-width="1.2"/>
+      <rect x="172" y="10" width="6" height="3" fill="#ffffff" stroke="#374151" stroke-width="1"/>
+      <rect x="172" y="15" width="6" height="3" fill="#ffffff" stroke="#374151" stroke-width="1"/>
+      <!-- Text -->
+      <text x="100" y="36" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">Exporters</text>
+      <text x="100" y="56" text-anchor="middle" font-size="11" fill="#4b5563">(container, web, DB)</text>
+    </g>
+
+    <!-- INTERNAL ARROWS IN MONITORING -->
+    <!-- Grafana -> Loki (log) -->
+    <line x1="205" y1="130" x2="140" y2="235" stroke="#374151" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <rect x="152" y="172" width="26" height="16" rx="2" fill="#ffffff" stroke="#e5e7eb" stroke-width="1"/>
+    <text x="165" y="184" text-anchor="middle" font-size="11" fill="#374151">log</text>
+
+    <!-- Grafana -> Prometheus (metrics) -->
+    <line x1="285" y1="130" x2="350" y2="235" stroke="#374151" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <rect x="302" y="172" width="46" height="16" rx="2" fill="#ffffff" stroke="#e5e7eb" stroke-width="1"/>
+    <text x="325" y="184" text-anchor="middle" font-size="11" fill="#374151">metrics</text>
+
+    <!-- Promtail -> Loki (đẩy log) -->
+    <line x1="120" y1="485" x2="120" y2="305" stroke="#374151" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <rect x="94" y="380" width="52" height="18" rx="2" fill="#ffffff" stroke="#e5e7eb" stroke-width="1"/>
+    <text x="120" y="393" text-anchor="middle" font-size="11" fill="#374151">đẩy log</text>
+
+    <!-- Prometheus -> Exporters (thu metrics) -->
+    <path d="M 370 305 C 370 380, 370 420, 370 485" fill="none" stroke="#374151" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <rect x="335" y="380" width="70" height="18" rx="2" fill="#ffffff" stroke="#e5e7eb" stroke-width="1"/>
+    <text x="370" y="393" text-anchor="middle" font-size="11" fill="#374151">thu metrics</text>
+  </g>
+
+  <!-- ========================================================================= -->
+  <!-- RIGHT COLUMN: REVERSE PROXY -->
+  <!-- ========================================================================= -->
+  <g transform="translate(560, 275)">
+    <!-- 3D Box Boundary -->
+    <rect x="0" y="0" width="380" height="135" rx="4" fill="#ffffff" stroke="#374151" stroke-width="1.8" filter="url(#shadow)"/>
+    <polyline points="0,15 15,0 380,0 380,120 365,135" fill="none" stroke="#4b5563" stroke-width="1.2"/>
+    <text x="190" y="26" text-anchor="middle" font-size="15" font-weight="700" fill="#111827">Reverse Proxy</text>
+
+    <!-- COMPONENT: NGINX -->
+    <g transform="translate(25, 40)">
+      <rect x="0" y="0" width="330" height="75" rx="4" fill="#f9fafb" stroke="#374151" stroke-width="1.6"/>
+      <!-- UML Component Icon -->
+      <rect x="305" y="8" width="16" height="12" fill="#ffffff" stroke="#374151" stroke-width="1.2"/>
+      <rect x="302" y="10" width="6" height="3" fill="#ffffff" stroke="#374151" stroke-width="1"/>
+      <rect x="302" y="15" width="6" height="3" fill="#ffffff" stroke="#374151" stroke-width="1"/>
+      <!-- Text -->
+      <text x="155" y="32" text-anchor="middle" font-size="15" font-weight="700" fill="#111827">Nginx</text>
+      <text x="155" y="52" text-anchor="middle" font-size="12" fill="#4b5563">HTTPS + security headers</text>
+    </g>
+  </g>
+
+  <!-- ARROW: NGINX -> GRAFANA (proxy) -->
+  <line x1="585" y1="365" x2="355" y2="365" stroke="#374151" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <rect x="440" y="354" width="60" height="18" rx="2" fill="#ffffff" stroke="#e5e7eb" stroke-width="1"/>
+  <text x="470" y="367" text-anchor="middle" font-size="11" fill="#1f2937">proxy</text>
+
+  <!-- ========================================================================= -->
+  <!-- RIGHT COLUMN: ỨNG DỤNG -->
+  <!-- ========================================================================= -->
+  <g transform="translate(560, 480)">
+    <!-- 3D Box Boundary -->
+    <rect x="0" y="0" width="380" height="155" rx="4" fill="#ffffff" stroke="#374151" stroke-width="1.8" filter="url(#shadow)"/>
+    <polyline points="0,15 15,0 380,0 380,140 365,155" fill="none" stroke="#4b5563" stroke-width="1.2"/>
+    <text x="190" y="28" text-anchor="middle" font-size="15" font-weight="700" fill="#111827">Ứng dụng</text>
+
+    <!-- COMPONENT 1: WEB PYTHON -->
+    <g transform="translate(20, 45)">
+      <rect x="0" y="0" width="155" height="85" rx="4" fill="#f9fafb" stroke="#374151" stroke-width="1.6"/>
+      <!-- UML Component Icon -->
+      <rect x="130" y="8" width="16" height="12" fill="#ffffff" stroke="#374151" stroke-width="1.2"/>
+      <rect x="127" y="10" width="6" height="3" fill="#ffffff" stroke="#374151" stroke-width="1"/>
+      <rect x="127" y="15" width="6" height="3" fill="#ffffff" stroke="#374151" stroke-width="1"/>
+      <!-- Text -->
+      <text x="72" y="38" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">Web Python</text>
+      <text x="72" y="58" text-anchor="middle" font-size="11" fill="#4b5563">(Flask + Gunicorn)</text>
+    </g>
+
+    <!-- COMPONENT 2: PGADMIN -->
+    <g transform="translate(205, 45)">
+      <rect x="0" y="0" width="155" height="85" rx="4" fill="#f9fafb" stroke="#374151" stroke-width="1.6"/>
+      <!-- UML Component Icon -->
+      <rect x="130" y="8" width="16" height="12" fill="#ffffff" stroke="#374151" stroke-width="1.2"/>
+      <rect x="127" y="10" width="6" height="3" fill="#ffffff" stroke="#374151" stroke-width="1"/>
+      <rect x="127" y="15" width="6" height="3" fill="#ffffff" stroke="#374151" stroke-width="1"/>
+      <!-- Text -->
+      <text x="72" y="38" text-anchor="middle" font-size="14" font-weight="700" fill="#111827">pgAdmin 4</text>
+      <text x="72" y="58" text-anchor="middle" font-size="11" fill="#4b5563">(Quản trị CSDL)</text>
+    </g>
+  </g>
+
+  <!-- ARROWS: NGINX -> WEB & PGADMIN -->
+  <!-- Nginx -> Web Python -->
+  <line x1="675" y1="390" x2="655" y2="525" stroke="#374151" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <rect x="640" y="440" width="38" height="16" rx="2" fill="#ffffff" stroke="#e5e7eb" stroke-width="1"/>
+  <text x="659" y="452" text-anchor="middle" font-size="11" fill="#1f2937">proxy</text>
+
+  <!-- Nginx -> pgAdmin -->
+  <line x1="815" y1="390" x2="835" y2="525" stroke="#374151" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <rect x="806" y="440" width="38" height="16" rx="2" fill="#ffffff" stroke="#e5e7eb" stroke-width="1"/>
+  <text x="825" y="452" text-anchor="middle" font-size="11" fill="#1f2937">proxy</text>
+
+  <!-- ========================================================================= -->
+  <!-- RIGHT COLUMN BOTTOM: DATABASE POSTGRESQL (CYLINDER SHAPE) -->
+  <!-- ========================================================================= -->
+  <g transform="translate(685, 735)">
+    <!-- Cylinder Body -->
+    <path d="M 0,20 L 0,80 A 65,20 0 0,0 130,80 L 130,20 Z" fill="#f9fafb" stroke="#374151" stroke-width="1.8"/>
+    <!-- Cylinder Bottom Ellipse -->
+    <ellipse cx="65" cy="80" rx="65" ry="20" fill="#f9fafb" stroke="#374151" stroke-width="1.8"/>
+    <!-- Cylinder Top Ellipse -->
+    <ellipse cx="65" cy="20" rx="65" ry="20" fill="#ffffff" stroke="#374151" stroke-width="1.8"/>
+    <!-- Text -->
+    <text x="65" y="48" text-anchor="middle" font-size="15" font-weight="700" fill="#111827">PostgreSQL</text>
+    <text x="65" y="66" text-anchor="middle" font-size="11" fill="#4b5563">(Volume: db_data)</text>
+  </g>
+
+  <!-- ARROWS: APPS -> POSTGRESQL -->
+  <!-- Web Python -> PostgreSQL -->
+  <line x1="660" y1="610" x2="720" y2="735" stroke="#374151" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <rect x="670" y="660" width="30" height="16" rx="2" fill="#ffffff" stroke="#e5e7eb" stroke-width="1"/>
+  <text x="685" y="672" text-anchor="middle" font-size="11" fill="#1f2937">SQL</text>
+
+  <!-- pgAdmin -> PostgreSQL -->
+  <line x1="840" y1="610" x2="780" y2="735" stroke="#374151" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <rect x="800" y="660" width="30" height="16" rx="2" fill="#ffffff" stroke="#e5e7eb" stroke-width="1"/>
+  <text x="815" y="672" text-anchor="middle" font-size="11" fill="#1f2937">SQL</text>
+
+</svg>

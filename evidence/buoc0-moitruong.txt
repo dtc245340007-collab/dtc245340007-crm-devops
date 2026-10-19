@@ -1,0 +1,112 @@
+==========================================================
+EVIDENCE B??C 0: KH?O S?T M?I TR??NG & CHU?N B? REPO
+Sinh vi?n: NGUYEN THI QUYNH THO - MSSV: dtc245340007
+Th?i gian ghi nh?n: 2026-10-19 15:58:36 +07
+==========================================================
+
+1. TH?NG TIN H? TH?NG PH?N C?NG & H?H:
+--- OS ---
+Description:	Ubuntu 26.04 LTS
+--- CPU ---
+Model name:                              Intel(R) Core(TM) i7-8650U CPU @ 1.90GHz
+S? l??ng CPU core: 2
+--- RAM ---
+               total        used        free      shared  buff/cache   available
+Mem:           7.2Gi       2.9Gi       344Mi        45Mi       4.3Gi       4.3Gi
+Swap:             0B          0B          0B
+--- DISK (? ??A G?C) ---
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sda2        50G   22G   26G  46% /
+--- C?C C?NG ?ANG M? (ss -tlnp) ---
+State  Recv-Q Send-Q Local Address:Port  Peer Address:PortProcess
+LISTEN 0      4096         0.0.0.0:5432       0.0.0.0:*          
+LISTEN 0      511          0.0.0.0:80         0.0.0.0:*          
+LISTEN 0      4096         0.0.0.0:22         0.0.0.0:*          
+LISTEN 0      4096      127.0.0.54:53         0.0.0.0:*          
+LISTEN 0      4096       127.0.0.1:35699      0.0.0.0:*          
+LISTEN 0      4096         0.0.0.0:9090       0.0.0.0:*          
+LISTEN 0      4096         0.0.0.0:3100       0.0.0.0:*          
+LISTEN 0      4096         0.0.0.0:3306       0.0.0.0:*          
+LISTEN 0      4096         0.0.0.0:8080       0.0.0.0:*          
+LISTEN 0      4096         0.0.0.0:8082       0.0.0.0:*          
+LISTEN 0      4096       127.0.0.1:631        0.0.0.0:*          
+LISTEN 0      4096   127.0.0.53%lo:53         0.0.0.0:*          
+LISTEN 0      4096         0.0.0.0:3001       0.0.0.0:*          
+LISTEN 0      4096            [::]:5432          [::]:*          
+LISTEN 0      511             [::]:80            [::]:*          
+LISTEN 0      32                 *:21               *:*          
+LISTEN 0      4096            [::]:22            [::]:*          
+LISTEN 0      4096           [::1]:631           [::]:*          
+LISTEN 0      4096            [::]:9090          [::]:*          
+LISTEN 0      4096            [::]:3100          [::]:*          
+LISTEN 0      4096            [::]:3306          [::]:*          
+LISTEN 0      4096            [::]:8080          [::]:*          
+LISTEN 0      4096            [::]:8082          [::]:*          
+LISTEN 0      4096            [::]:3001          [::]:*          
+
+2. PHI?N B?N C?C C?NG C? ?? C?I ??T:
+Docker version 29.1.3, build 29.1.3-0ubuntu4.1
+Docker Compose version 2.40.3+ds1-0ubuntu1
+git version 2.53.0
+OpenSSL 3.5.5 27 Jan 2026 (Library: OpenSSL 3.5.5 27 Jan 2026)
+curl 8.18.0 (x86_64-pc-linux-gnu) libcurl/8.18.0 OpenSSL/3.5.5 zlib/1.3.1 brotli/1.2.0 zstd/1.5.7 libidn2/2.3.8 libpsl/0.21.2 libssh2/1.11.1 nghttp2/1.68.0 librtmp/2.3 mit-krb5/1.22.1 OpenLDAP/2.6.10
+--- UFW STATUS ---
+/usr/sbin/ufw
+ufw installed
+
+3. L?CH S? GIT COMMIT:
+6c29ada chore: initialize project structure
+
+4. C?U TR?C TH? M?C D? ?N ~/crm:
+/home/ubuntu/crm
+├── db
+│   └── init.sql
+├── docker-compose.yml
+├── docs
+│   └── .gitkeep
+├── .env
+├── .env.example
+├── evidence
+│   └── buoc0-moitruong.txt
+├── .gitignore
+├── grafana
+│   └── provisioning
+│       ├── dashboards
+│       │   └── .gitkeep
+│       └── datasources
+│           └── .gitkeep
+├── loki
+│   └── .gitkeep
+├── nginx
+│   ├── certs
+│   │   └── .gitkeep
+│   └── nginx.conf
+├── pgadmin
+│   └── servers.json
+├── prometheus
+│   └── .gitkeep
+├── promtail
+│   └── .gitkeep
+├── README.md
+├── scripts
+│   └── .gitkeep
+└── web
+    ├── Dockerfile
+    └── src
+        └── .gitkeep
+
+17 directories, 19 files
+
+5. KI?M TRA .GITIGNORE KH?NG THEO D?I .env V? evidence:
+On branch main
+Ignored files:
+  (use "git add -f <file>..." to include in what will be committed)
+	.env
+	evidence/
+
+nothing to commit, working tree clean
+
+6. KẾT QUẢ LIÊN KẾT VÀ ĐẨY LÊN GITHUB:
+origin	git@github.com:dtc245340007-collab/dtc245340007-crm-devops.git (fetch)
+origin	git@github.com:dtc245340007-collab/dtc245340007-crm-devops.git (push)
+* main 6c29ada [origin/main] chore: initialize project structure

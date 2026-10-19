@@ -1,0 +1,106 @@
+======================================================================
+EVIDENCE B??C 1 & 2: WEB CRM (FLASK), POSTGRESQL & PGADMIN
+Sinh vi?n: NGUYEN THI QUYNH THO - MSSV: dtc245340007
+Th?i gian th?c hi?n: 2026-10-19 16:30:16 +07
+======================================================================
+
+--- 1. TR?NG TH?I C?C D?CH V? DOCKER COMPOSE (docker compose ps) ---
+NAME            IMAGE                 COMMAND                  SERVICE   CREATED              STATUS                   PORTS
+crm-db-1        postgres:16.4         "docker-entrypoint.s…"   db        3 minutes ago        Up 3 minutes (healthy)   5432/tcp
+crm-pgadmin-1   dpage/pgadmin4:8.11   "/entrypoint.sh"         pgadmin   About a minute ago   Up About a minute        443/tcp, 0.0.0.0:8081->80/tcp, [::]:8081->80/tcp
+crm-web-1       crm-web               "gunicorn -w 2 -b 0.…"   web       3 minutes ago        Up 3 minutes             0.0.0.0:8080->8000/tcp, [::]:8080->8000/tcp
+
+--- 2. KI?M TRA C?NG WEB 8080: /health V? /login ---
+GET /health:
+HTTP/1.1 200 OK
+Server: gunicorn
+Date: Mon, 19 Oct 2026 09:30:16 GMT
+Connection: close
+Content-Type: text/html; charset=utf-8
+Content-Length: 2
+Vary: Cookie
+Set-Cookie: session=eyJjc3JmX3Rva2VuIjoiZTU
+
+GET /login:
+HTTP/1.1 200 OK
+Server: gunicorn
+Date: Mon, 19 Oct 2026 09:30:16 GMT
+Connection: close
+Content-Type: text/html; charset=utf-8
+Content-Length: 1564
+Vary: Cookie
+Set-Cookie: session=.eJwNwtsNgCAMAMBdOgG
+
+--- 3. KI?M TRA B?O M?T: ??NG NH?P SAI & KI?M TRA LOG DOCKER ---
+?? g?i request ??ng nh?p sai m?t kh?u cho nhanvien01.
+?? g?i request ??ng nh?p ng??i d?ng kh?ng t?n t?i (hacker_unknown).
+Log ghi nh?n tr?n STDERR c?a container web:
+web-1  | LOGIN_FAILED ip=172.25.0.1 user=nhanvien01 reason=wrong_password
+web-1  | LOGIN_FAILED ip=172.25.0.1 user=hacker_unknown reason=unknown_user
+
+--- 4. K?CH B?N KI?M TH? NGHI?P V? NH?N VI?N: nhanvien01 ---
+??ng nh?p nhanvien01 th?nh c?ng. URL hi?n t?i: http://localhost:8080/
+?? t?o kh?ch h?ng m?i 'KH-TEST-NV01' b?i nhanvien01. URL chi ti?t: http://localhost:8080/customers/16
+?? th?m ng??i li?n h? ch?nh: 'Nguy?n V?n ??i Di?n Test' cho kh?ch h?ng #16
+?? th?m t??ng t?c: 'Cu?c g?i t? v?n quy tr?nh tri?n khai' v?o Timeline.
+X?c minh trong Timeline HTML: C? Contact: True, C? Interaction: True
+
+--- 4.5 KI?M TRA PH?N QUY?N (AUTHORIZATION CHECKS) ---
+CH?NH X?C: nhanvien01 truy c?p kh?ch h?ng #3 c?a nhanvien02 b? ch?n v?i HTTP Code: 403 (FORBIDDEN)
+CH?NH X?C: nhanvien01 truy c?p /reports b? ch?n v?i HTTP Code: 403 (FORBIDDEN)
+
+--- 5. K?CH B?N KI?M TH? QUY?N QU?N L? (admin) ---
+??ng nh?p admin th?nh c?ng. URL: http://localhost:8080/
+Admin truy c?p kh?ch h?ng #3 th?nh c?ng, HTTP Code: 200
+Admin truy c?p /reports th?nh c?ng, HTTP Code: 200 (N?i dung ??ng: False)
+Admin th?c hi?n y?u c?u x?a kh?ch h?ng #1 (?? c? t??ng t?c).
+X?c nh?n trong Database: Tr?ng th?i Kh?ch h?ng #1 sau l?nh x?a l?: 'inactive' (Chuy?n sang inactive, kh?ng b? x?a c?ng)
+
+--- 6. TRUY V?N C? S? D? LI?U POSTGRESQL (docker exec psql) ---
+Danh s?ch b?ng (\dt):
+List of relations
+ Schema |     Name     | Type  |   Owner   
+--------+--------------+-------+-----------
+ public | contacts     | table | crm_admin
+ public | customers    | table | crm_admin
+ public | interactions | table | crm_admin
+ public | users        | table | crm_admin
+(4 rows)
+
+S? l??ng b?n ghi t?ng b?ng:
+users | customers | contacts | interactions 
+-------+-----------+----------+--------------
+     3 |        16 |       21 |           41
+(1 row)
+
+--- 7. KI?M TRA D?CH V? PGADMIN (PORT 8081) ---
+HTTP/1.1 200 OK
+Server: gunicorn
+Date: Mon, 19 Oct 2026 09:30:18 GMT
+Connection: keep-alive
+Content-Type: text/html; charset=utf-8
+Content-Length: 6479
+Vary: Accept-Encoding
+X-Frame-Options: SAMEORIGIN
+Content-Security-Policy: default-src ws: http: data: blob: 'unsafe-inline' 'unsafe-eval';
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 1; mode=block
+Set-Cookie: pga4_session=add9e52f-677b-40a2-a4b5-908a751b1caf!EhuomiLwAGjcbpaJsfQfk8fFaQ8G0YZQfde3xySLSl4=; Expires=Tue, 20 Oct 2026 09:30:18 GMT; HttpOnly; Path=/; SameSite=Lax
+N?i dung servers.json ???c n?p s?n trong pgAdmin:
+{
+  "Servers": {
+    "1": {
+      "Name": "CRM DB",
+      "Group": "Servers",
+      "Host": "db",
+      "Port": 5432,
+      "MaintenanceDB": "crm",
+      "Username": "crm_admin",
+      "SSLMode": "prefer"
+    }
+  }
+}
+
+======================================================================
+K?T LU?N: T?T C? C?C B??C KI?M TRA ??U TH?NH C?NG V? ??T CHU?N!
+======================================================================

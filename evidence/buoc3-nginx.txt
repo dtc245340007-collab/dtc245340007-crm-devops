@@ -1,0 +1,83 @@
+======================================================================
+EVIDENCE B??C 3: NGINX REVERSE PROXY, HTTPS T? K? & SECURITY HEADERS
+Sinh vi?n: NGUYEN THI QUYNH THO - MSSV: dtc245340007
+Th?i gian th?c hi?n: 2026-10-19 16:37:07 +07
+======================================================================
+
+1. TR?NG TH?I C?C D?CH V? DOCKER COMPOSE:
+NAME            IMAGE                 COMMAND                  SERVICE   CREATED          STATUS                    PORTS
+crm-db-1        postgres:16.4         "docker-entrypoint.s…"   db        10 minutes ago   Up 10 minutes (healthy)   5432/tcp
+crm-nginx-1     nginx:1.27-alpine     "/docker-entrypoint.…"   nginx     2 minutes ago    Up 2 minutes              0.0.0.0:80->80/tcp, [::]:80->80/tcp, 0.0.0.0:443->443/tcp, [::]:443->443/tcp
+crm-pgadmin-1   dpage/pgadmin4:8.11   "/entrypoint.sh"         pgadmin   2 minutes ago    Up 2 minutes              80/tcp, 443/tcp
+crm-web-1       crm-web               "gunicorn -w 2 -b 0.…"   web       2 minutes ago    Up 2 minutes              8000/tcp
+
+2. KI?M TRA C? PH?P C?U H?NH NGINX (docker compose exec nginx nginx -t):
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+
+3. KI?M TRA CHUY?N H??NG HTTP -> HTTPS (PORT 80 -> 443 301 MOVED PERMANENTLY):
+HTTP/1.1 301 Moved Permanently
+Server: nginx
+Date: Mon, 19 Oct 2026 09:37:07 GMT
+Content-Type: text/html
+Content-Length: 162
+Connection: keep-alive
+Location: https://192.168.207.128/
+
+4. KI?M TRA HTTPS V? TO?N B? HTTP SECURITY HEADERS (curl -kI https://192.168.207.128):
+HTTP/2 302 
+server: nginx
+date: Mon, 19 Oct 2026 09:37:07 GMT
+content-type: text/html; charset=utf-8
+content-length: 215
+location: /login?next=/?
+vary: Cookie
+set-cookie: session=eyJjc3JmX3Rva2VuIjoiMzNjYTU1N2IxMGQ2MWNhZjg1YmU5YzhhYTRkOGNhNDE5ZGMxOWJmNWIwZTZjMjBjYmFkNWQ1MTliY2Q2ZGMwMSJ9.atXkww.KijAPKpAAVviFnznYNOuZNwFKow; HttpOnly; Path=/; SameSite=Lax
+content-security-policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; frame-ancestors 'self';
+x-frame-options: SAMEORIGIN
+x-content-type-options: nosniff
+x-xss-protection: 1; mode=block
+referrer-policy: strict-origin-when-cross-origin
+strict-transport-security: max-age=31536000; includeSubDomains
+permissions-policy: geolocation=(), microphone=(), camera=()
+
+5. KI?M TRA PROXY T?I PGADMIN (https://localhost/pgadmin/):
+HTTP/2 302 
+server: nginx
+date: Mon, 19 Oct 2026 09:37:07 GMT
+content-type: text/html; charset=utf-8
+content-length: 245
+location: /pgadmin/login?next=/pgadmin/
+vary: Accept-Encoding
+x-frame-options: SAMEORIGIN
+content-security-policy: default-src ws: http: data: blob: 'unsafe-inline' 'unsafe-eval';
+x-content-type-options: nosniff
+x-xss-protection: 1; mode=block
+set-cookie: pga4_session=64ac0f38-a399-4806-9e5c-e39f90d644dd!JDO0ZYQd3lnDaIIY+WAkvGNb4jg18bIFGXNKwWyQFIk=; Expires=Tue, 20 Oct 2026 09:37:07 GMT; HttpOnly; Path=/; SameSite=Lax
+content-security-policy: default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: ws: wss:; img-src 'self' data: blob:;
+x-frame-options: SAMEORIGIN
+x-content-type-options: nosniff
+x-xss-protection: 1; mode=block
+referrer-policy: strict-origin-when-cross-origin
+strict-transport-security: max-age=31536000; includeSubDomains
+
+6. X?C NH?N C?NG 8080 V? 8081 KH?NG C?N TRUY C?P ???C T? NGO?I:
+Port 8080: PORT 8080 CLOSED
+Port 8081: PORT 8081 CLOSED
+
+7. TH?NG TIN CH?NG CH? SSL/TLS T? K? (openssl s_client):
+subject=C=VN, ST=Hanoi, L=Hanoi, O=CRM DevOps, OU=IT, CN=192.168.207.128
+notBefore=Oct 19 09:34:25 2026 GMT
+notAfter=Oct 19 09:34:25 2027 GMT
+X509v3 Subject Alternative Name: 
+    IP Address:192.168.207.128, DNS:localhost, IP Address:127.0.0.1
+
+8. KI?M TRA NGINX STUB_STATUS (D?NH CHO EXPORTER ? B??C 4):
+Active connections: 1 
+server accepts handled requests
+ 14 14 13 
+Reading: 0 Writing: 1 Waiting: 0
+
+======================================================================
+K?T LU?N B??C 3: NGINX REVERSE PROXY, HTTPS V? HEADERS B?O M?T ??T CHU?N!
+======================================================================

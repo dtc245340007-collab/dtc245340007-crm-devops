@@ -1,0 +1,250 @@
+================================================================================
+ EVIDENCE BƯỚC 6: KIỂM CHỨNG CÁC BIỆN PHÁP BẢO MẬT & HARDENING HỆ THỐNG
+ Thời gian: Mon Oct 19 09:20:36 PM +07 2026
+ Đề tài 4: Hệ thống CRM Chăm sóc Khách hàng
+ MSSV: dtc245340007 - NGUYEN THI QUYNH THO
+================================================================================
+
+=== 1. KIỂM TRA NGƯỜI DÙNG TRONG TỪNG SERVICE (NON-ROOT CONTAINER) ===
+Danh sách ID/whoami thực tế bên trong từng container:
+web                -> uid=10001(appuser) gid=10001(appgroup) groups=10001(appgroup)
+nginx              -> uid=101(nginx) gid=101(nginx) groups=101(nginx)
+pgadmin            -> uid=5050(pgadmin) gid=5050 groups=5050
+prometheus         -> uid=65534(nobody) gid=65534(nobody) groups=65534(nobody)
+grafana            -> uid=472(grafana) gid=472 groups=472
+loki               -> uid=10001(loki) gid=10001(loki) groups=10001(loki)
+alert-sink         -> uid=10001(appuser) gid=10001(appgroup) groups=10001(appgroup)
+postgres-exporter  -> uid=65534(nobody) gid=65534(nobody) groups=65534(nobody)
+promtail           -> uid=0(root) gid=0(root) groups=0(root)
+cadvisor           -> uid=0(root) gid=0(root) groups=0(root),0(root),1(bin),2(daemon),3(sys),4(adm),6(disk),10(wheel),11(floppy),20(dialout),26(tape),27(video)
+db                 -> uid=0(root) gid=0(root) groups=0(root)
+
+Ghi chú ngoại lệ:
+- cadvisor & promtail: Bắt buộc cần quyền root để đọc Docker socket (/var/run/docker.sock) và container json logs (/var/lib/docker/containers). Đã hardening bằng mount chỉ đọc (:ro) và drop toàn bộ capabilities (cap_drop: ALL).
+- db (postgres): Image chuẩn khởi tạo bằng script root để cấp quyền volume, sau đó chuyển toàn bộ tiến trình daemon sang user 'postgres' (UID 999).
+
+=== 2. KIỂM TRA PHÂN TÁCH MẠNG DOCKER (NETWORK ISOLATION) ===
+--- Danh sách mạng Docker ---
+3cc80115b6f9   crm_backend                        bridge    local
+cb6cf99dd794   crm_default                        bridge    local
+9272ef543479   crm_frontend                       bridge    local
+1cdc5f6e52c8   crm_monitoring                     bridge    local
+8239a619f2ab   crm_project_backend-net            bridge    local
+454777b53c8d   crm_project_frontend-net           bridge    local
+
+--- Mạng BACKEND (internal: true, chứa db, web, pgadmin, postgres-exporter) ---
+{
+  "name": "crm_backend",
+  "internal": true,
+  "containers": [
+    "crm-db-1",
+    "crm-web-1",
+    "crm-postgres-exporter-1",
+    "crm-pgadmin-1"
+  ]
+}
+
+--- Mạng MONITORING (internal: true, chứa các thành phần giám sát/log) ---
+{
+  "name": "crm_monitoring",
+  "internal": true,
+  "containers": [
+    "crm-loki-1",
+    "crm-alert-sink-1",
+    "crm-grafana-1",
+    "crm-cadvisor-1",
+    "crm-prometheus-1",
+    "crm-postgres-exporter-1",
+    "crm-promtail-1",
+    "crm-nginx-exporter-1"
+  ]
+}
+
+--- Mạng FRONTEND (chỉ nối reverse proxy với web, pgadmin, grafana) ---
+{
+  "name": "crm_frontend",
+  "internal": false,
+  "containers": [
+    "crm-grafana-1",
+    "crm-web-1",
+    "crm-nginx-1",
+    "crm-nginx-exporter-1",
+    "crm-pgadmin-1"
+  ]
+}
+
+-> KẾT LUẬN: db hoàn toàn KHÔNG nối vào crm_frontend, KHÔNG publish port ra ngoài.
+
+=== 3. KIỂM TRA CỔNG MỞ & TIẾN TRÌNH LẮNG NGHE (PORT EXPOSURE) ===
+--- docker compose ps (chỉ có nginx mở cổng 80 và 443) ---
+NAME                      IMAGE                                           COMMAND                  SERVICE             CREATED          STATUS                 PORTS
+crm-alert-sink-1          crm-alert-sink                                  "python app.py"          alert-sink          3 hours ago      Up 3 hours             5000/tcp
+crm-cadvisor-1            gcr.io/cadvisor/cadvisor:v0.49.1                "/usr/bin/cadvisor -…"   cadvisor            3 hours ago      Up 3 hours (healthy)   8080/tcp
+crm-db-1                  postgres:16.4                                   "docker-entrypoint.s…"   db                  3 hours ago      Up 3 hours (healthy)   5432/tcp
+crm-grafana-1             grafana/grafana:11.2.0                          "/run.sh"                grafana             35 minutes ago   Up 34 minutes          3000/tcp
+crm-loki-1                grafana/loki:2.9.2                              "/usr/bin/loki -conf…"   loki                3 hours ago      Up 3 hours             3100/tcp
+crm-nginx-1               nginxinc/nginx-unprivileged:1.27-alpine         "/docker-entrypoint.…"   nginx               34 minutes ago   Up 34 minutes          0.0.0.0:80->8080/tcp, [::]:80->8080/tcp, 0.0.0.0:443->8443/tcp, [::]:443->8443/tcp
+crm-nginx-exporter-1      nginx/nginx-prometheus-exporter:1.3.0           "/usr/bin/nginx-prom…"   nginx-exporter      3 hours ago      Up 34 minutes          
+crm-pgadmin-1             dpage/pgadmin4:8.11                             "/entrypoint.sh"         pgadmin             29 minutes ago   Up 29 minutes          80/tcp, 443/tcp
+crm-postgres-exporter-1   prometheuscommunity/postgres-exporter:v0.15.0   "/bin/postgres_expor…"   postgres-exporter   3 hours ago      Up 3 hours             9187/tcp
+crm-prometheus-1          prom/prometheus:v2.54.1                         "/bin/prometheus --c…"   prometheus          3 hours ago      Up 2 minutes           9090/tcp
+crm-promtail-1            grafana/promtail:3.0.0                          "/usr/bin/promtail -…"   promtail            3 hours ago      Up 3 hours             
+crm-web-1                 crm-web                                         "gunicorn -w 2 -b 0.…"   web                 6 minutes ago    Up 6 minutes           8000/tcp
+
+--- ss -tlnp (các cổng lắng nghe trên host) ---
+State  Recv-Q Send-Q Local Address:Port  Peer Address:PortProcess                                                 
+LISTEN 0      4096         0.0.0.0:5432       0.0.0.0:*    users:(("docker-proxy",pid=3866,fd=7))                 
+LISTEN 0      4096         0.0.0.0:80         0.0.0.0:*    users:(("docker-proxy",pid=189548,fd=7))               
+LISTEN 0      4096         0.0.0.0:22         0.0.0.0:*    users:(("sshd",pid=1113,fd=3),("systemd",pid=1,fd=525))
+LISTEN 0      4096      127.0.0.54:53         0.0.0.0:*    users:(("systemd-resolve",pid=517,fd=19))              
+LISTEN 0      4096       127.0.0.1:35699      0.0.0.0:*    users:(("containerd",pid=1108,fd=14))                  
+LISTEN 0      4096         0.0.0.0:443        0.0.0.0:*    users:(("docker-proxy",pid=189571,fd=7))               
+LISTEN 0      4096         0.0.0.0:9090       0.0.0.0:*    users:(("docker-proxy",pid=3521,fd=7))                 
+LISTEN 0      4096         0.0.0.0:3100       0.0.0.0:*    users:(("docker-proxy",pid=3942,fd=7))                 
+LISTEN 0      4096         0.0.0.0:3306       0.0.0.0:*    users:(("docker-proxy",pid=3262,fd=7))                 
+LISTEN 0      4096         0.0.0.0:8082       0.0.0.0:*    users:(("docker-proxy",pid=4028,fd=7))                 
+LISTEN 0      4096       127.0.0.1:631        0.0.0.0:*    users:(("cupsd",pid=1083,fd=7))                        
+LISTEN 0      4096   127.0.0.53%lo:53         0.0.0.0:*    users:(("systemd-resolve",pid=517,fd=17))              
+LISTEN 0      4096         0.0.0.0:3001       0.0.0.0:*    users:(("docker-proxy",pid=3803,fd=7))                 
+LISTEN 0      4096            [::]:5432          [::]:*    users:(("docker-proxy",pid=3888,fd=7))                 
+LISTEN 0      4096            [::]:80            [::]:*    users:(("docker-proxy",pid=189554,fd=7))               
+LISTEN 0      32                 *:21               *:*    users:(("vsftpd",pid=1109,fd=3))                       
+LISTEN 0      4096            [::]:22            [::]:*    users:(("sshd",pid=1113,fd=4),("systemd",pid=1,fd=527))
+LISTEN 0      4096           [::1]:631           [::]:*    users:(("cupsd",pid=1083,fd=6))                        
+LISTEN 0      4096            [::]:443           [::]:*    users:(("docker-proxy",pid=189579,fd=7))               
+LISTEN 0      4096            [::]:9090          [::]:*    users:(("docker-proxy",pid=3553,fd=7))                 
+LISTEN 0      4096            [::]:3100          [::]:*    users:(("docker-proxy",pid=3956,fd=7))                 
+LISTEN 0      4096            [::]:3306          [::]:*    users:(("docker-proxy",pid=3268,fd=7))                 
+LISTEN 0      4096            [::]:8082          [::]:*    users:(("docker-proxy",pid=4037,fd=7))                 
+LISTEN 0      4096            [::]:3001          [::]:*    users:(("docker-proxy",pid=3809,fd=7))                 
+
+=== 4. KIỂM TRA TRẠNG THÁI TƯỜNG LỬA UFW (FIREWALL HARDENING) ===
+Status: active
+Logging: on (low)
+Default: deny (incoming), allow (outgoing), deny (routed)
+New profiles: skip
+
+To                         Action      From
+--                         ------      ----
+22/tcp                     ALLOW IN    Anywhere                  
+20/tcp                     ALLOW IN    Anywhere                  
+21/tcp                     ALLOW IN    Anywhere                  
+80/tcp                     ALLOW IN    Anywhere                  
+81/tcp                     ALLOW IN    Anywhere                  
+443/tcp                    ALLOW IN    Anywhere                  
+22/tcp (v6)                ALLOW IN    Anywhere (v6)             
+20/tcp (v6)                ALLOW IN    Anywhere (v6)             
+21/tcp (v6)                ALLOW IN    Anywhere (v6)             
+80/tcp (v6)                ALLOW IN    Anywhere (v6)             
+81/tcp (v6)                ALLOW IN    Anywhere (v6)             
+443/tcp (v6)               ALLOW IN    Anywhere (v6)             
+
+
+=== 5. HẠN CHẾ QUYỀN DATABASE (LEAST PRIVILEGE ROLE & PERMISSION CHECK) ===
+--- Danh sách Roles (\du) ---
+                             List of roles
+ Role name |                         Attributes                         
+-----------+------------------------------------------------------------
+ crm_admin | Superuser, Create role, Create DB, Replication, Bypass RLS
+ crm_app   | 
+ exporter  | 
+
+
+--- Quyền trên các bảng (\dp) ---
+                                          Access privileges
+ Schema |        Name         |   Type   |      Access privileges      | Column privileges | Policies 
+--------+---------------------+----------+-----------------------------+-------------------+----------
+ public | contacts            | table    | crm_admin=arwdDxt/crm_admin+|                   | 
+        |                     |          | crm_app=arwd/crm_admin      |                   | 
+ public | contacts_id_seq     | sequence | crm_admin=rwU/crm_admin    +|                   | 
+        |                     |          | crm_app=rU/crm_admin        |                   | 
+ public | customers           | table    | crm_admin=arwdDxt/crm_admin+|                   | 
+        |                     |          | crm_app=arwd/crm_admin      |                   | 
+ public | customers_id_seq    | sequence | crm_admin=rwU/crm_admin    +|                   | 
+        |                     |          | crm_app=rU/crm_admin        |                   | 
+ public | interactions        | table    | crm_admin=arwdDxt/crm_admin+|                   | 
+        |                     |          | crm_app=arwd/crm_admin      |                   | 
+ public | interactions_id_seq | sequence | crm_admin=rwU/crm_admin    +|                   | 
+        |                     |          | crm_app=rU/crm_admin        |                   | 
+ public | users               | table    | crm_admin=arwdDxt/crm_admin+|                   | 
+        |                     |          | crm_app=arwd/crm_admin      |                   | 
+ public | users_id_seq        | sequence | crm_admin=rwU/crm_admin    +|                   | 
+        |                     |          | crm_app=rU/crm_admin        |                   | 
+(8 rows)
+
+
+--- Thử nghiệm DROP TABLE bằng role crm_app (Phải bị từ chối) ---
+ERROR:  must be owner of table customers
+
+--- Thử nghiệm CREATE TABLE bằng role crm_app (Phải bị từ chối) ---
+ERROR:  permission denied for schema public
+LINE 1: CREATE TABLE test_unauth(id int);
+                     ^
+
+=== 6. KIỂM TRA SECURITY HEADERS & ẨN THÔNG TIN PHIÊN BẢN (CURL) ===
+--- Headers trả về từ https://localhost/login ---
+HTTP/2 200 
+server: nginx
+date: Mon, 19 Oct 2026 14:20:48 GMT
+content-type: text/html; charset=utf-8
+content-length: 1564
+vary: Accept-Encoding
+vary: Cookie
+set-cookie: session=eyJjc3JmX3Rva2VuIjoiNGExNTk0NjgyZThlYmMxYjBmOTZiOTNhYWVmZmZkZWE3M2Q4NDcyOThmMGYzY2YyN2M4MTdjZjhhMzI0YjQ4OCJ9.atYnQA.zLA5upCNJ-r1dm585e1wxsjO8bg; Secure; HttpOnly; Path=/; SameSite=Lax
+content-security-policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; frame-ancestors 'self';
+x-frame-options: SAMEORIGIN
+x-content-type-options: nosniff
+x-xss-protection: 1; mode=block
+referrer-policy: strict-origin-when-cross-origin
+strict-transport-security: max-age=31536000; includeSubDomains
+permissions-policy: geolocation=(), microphone=(), camera=()
+
+
+Kiểm tra rò rỉ phiên bản:
+server: nginx
+
+=== 7. RÀ SOÁT BÍ MẬT & MẬT KHẨU TRONG GIT HISTORY (GIT GREP AUDIT) ===
+scripts/set_default_credentials.py:ADMIN_PASS = os.environ.get("ADMIN_PASSWORD", "Admin@CRM2026!")
+scripts/set_default_credentials.py:PGADMIN_PASS = os.environ.get("PGADMIN_DEFAULT_PASSWORD", "Admin@CRM2026!")
+scripts/set_default_credentials.py:GRAFANA_PASS = os.environ.get("GRAFANA_ADMIN_PASSWORD", "Admin@CRM2026!")
+scripts/set_default_credentials.py:DB_SUPER_PASS = os.environ.get("POSTGRES_PASSWORD", "Admin@CRM2026!")
+scripts/set_default_credentials.sh:ADMIN_PASS="${ADMIN_PASSWORD:-Admin@CRM2026!}"
+scripts/set_default_credentials.sh:PGADMIN_PASS="${PGADMIN_DEFAULT_PASSWORD:-Admin@CRM2026!}"
+scripts/set_default_credentials.sh:GRAFANA_PASS="${GRAFANA_ADMIN_PASSWORD:-Admin@CRM2026!}"
+scripts/set_default_credentials.sh:DB_SUPER_PASS="${POSTGRES_PASSWORD:-Admin@CRM2026!}"
+scripts/smoke_test.py:admin_pass = "Admin@CRM2026!"
+scripts/smoke_test.py:gf_pass = "Admin@CRM2026!"
+scripts/set_default_credentials.py:DB_APP_PASS = os.environ.get("APP_DB_PASSWORD", "App@CRM2026!")
+scripts/set_default_credentials.sh:DB_APP_PASS="${APP_DB_PASSWORD:-App@CRM2026!}"
+scripts/set_default_credentials.py:SECRET_KEY=CRM2026SecretKeySecurityDevOpsNguyenThiQuynhThoDTC245340007
+scripts/set_default_credentials.sh:SECRET_KEY=CRM2026SecretKeySecurityDevOpsNguyenThiQuynhThoDTC245340007
+scripts/generate_buoc6_evidence.sh:git grep "BEGIN PRIVATE KEY" >> "$EVID" 2>&1 || echo "[OK] KHÔNG có private key nào bị commit" >> "$EVID"
+
+=== 8. KẾT QUẢ CHẠY SMOKE TEST TOÀN BỘ HỆ THỐNG ===
+=================================================================
+          SMOKE TEST HE THONG CRM (KIEM THU TU DONG)             
+=================================================================
+
+[1] Kiem tra dang nhap Web CRM...
+ -> [PASSED] Dang nhap Web CRM thanh cong voi user: admin
+
+[2] Kiem tra Tao khach hang moi (/customers/new)...
+ -> [PASSED] Tao khach hang thanh cong: KH-VERIFY-9649 (Customer ID: 1)
+
+[3] Ghi nhan lich su tuong tac (/customers/1/interactions/new)...
+ -> [PASSED] Ghi nhan tuong tac thanh cong!
+
+[4] Kiem tra giao dien quan tri pgAdmin (/pgadmin/)...
+ -> [PASSED] pgAdmin phan hoi HTTP Status 200 (OK) [lan thu 1]
+
+[5] Kiem tra Grafana API qua Nginx Proxy (/grafana/api/datasources)...
+ -> [PASSED] Grafana xac thuc thanh cong. Datasources hoat dong: Loki, loki-1, Prometheus [lan thu 1]
+ -> [PASSED] Dashboards san sang: CRM - Containers, CRM - Logs, CRM - Nginx, CRM - PostgreSQL
+
+=================================================================
+   KET QUA: TOAN BO CHUC NANG HE THONG HOAT DONG HOAN HAO!     
+=================================================================
+
+================================================================================
+ HOÀN TẤT THỰC HIỆN KIỂM CHỨNG BƯỚC 6 (HARDENING)
+================================================================================

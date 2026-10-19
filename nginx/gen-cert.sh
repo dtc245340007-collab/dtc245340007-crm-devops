@@ -20,7 +20,7 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
     -subj "/C=VN/ST=Hanoi/L=Hanoi/O=CRM DevOps/OU=IT/CN=192.168.207.128" \
     -addext "subjectAltName = IP:192.168.207.128,DNS:localhost,IP:127.0.0.1"
 
-chmod 600 "$KEY_FILE"
+chmod 644 "$KEY_FILE"
 chmod 644 "$CERT_FILE"
 
 echo "Đã tạo thành công:"

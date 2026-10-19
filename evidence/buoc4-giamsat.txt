@@ -1,0 +1,320 @@
+=== EVIDENCE BƯỚC 4: GIÁM SÁT PROMETHEUS + GRAFANA ===
+Thời gian: Mon Oct 19 09:19:48 PM +07 2026
+Hệ thống: CRM Chăm sóc Khách hàng (Đề tài 4)
+MSSV: dtc245340007 - NGUYEN THI QUYNH THO
+Prometheus Internal IP: 172.28.0.2
+
+--- 1. DANH SÁCH CONTAINER VÀ TRẠNG THÁI ---
+NAME                      IMAGE                                           COMMAND                  SERVICE             CREATED          STATUS                 PORTS
+crm-alert-sink-1          crm-alert-sink                                  "python app.py"          alert-sink          3 hours ago      Up 3 hours             5000/tcp
+crm-cadvisor-1            gcr.io/cadvisor/cadvisor:v0.49.1                "/usr/bin/cadvisor -…"   cadvisor            3 hours ago      Up 3 hours (healthy)   8080/tcp
+crm-db-1                  postgres:16.4                                   "docker-entrypoint.s…"   db                  3 hours ago      Up 3 hours (healthy)   5432/tcp
+crm-grafana-1             grafana/grafana:11.2.0                          "/run.sh"                grafana             34 minutes ago   Up 33 minutes          3000/tcp
+crm-loki-1                grafana/loki:2.9.2                              "/usr/bin/loki -conf…"   loki                3 hours ago      Up 3 hours             3100/tcp
+crm-nginx-1               nginxinc/nginx-unprivileged:1.27-alpine         "/docker-entrypoint.…"   nginx               34 minutes ago   Up 33 minutes          0.0.0.0:80->8080/tcp, [::]:80->8080/tcp, 0.0.0.0:443->8443/tcp, [::]:443->8443/tcp
+crm-nginx-exporter-1      nginx/nginx-prometheus-exporter:1.3.0           "/usr/bin/nginx-prom…"   nginx-exporter      3 hours ago      Up 33 minutes          
+crm-pgadmin-1             dpage/pgadmin4:8.11                             "/entrypoint.sh"         pgadmin             28 minutes ago   Up 28 minutes          80/tcp, 443/tcp
+crm-postgres-exporter-1   prometheuscommunity/postgres-exporter:v0.15.0   "/bin/postgres_expor…"   postgres-exporter   3 hours ago      Up 3 hours             9187/tcp
+crm-prometheus-1          prom/prometheus:v2.54.1                         "/bin/prometheus --c…"   prometheus          3 hours ago      Up About a minute      9090/tcp
+crm-promtail-1            grafana/promtail:3.0.0                          "/usr/bin/promtail -…"   promtail            3 hours ago      Up 3 hours             
+crm-web-1                 crm-web                                         "gunicorn -w 2 -b 0.…"   web                 5 minutes ago    Up 5 minutes           8000/tcp
+
+--- 2. PROMETHEUS TARGETS TRẠNG THÁI ---
+cadvisor -> cadvisor:8080 [health: up]
+nginx -> nginx-exporter:9113 [health: up]
+postgres -> postgres-exporter:9187 [health: up]
+prometheus -> localhost:9090 [health: up]
+
+--- 3. METRIC TRƯỚC KHI SINH TẢI ---
+[Nginx active connections]:
+{
+  "status": "success",
+  "data": {
+    "resultType": "vector",
+    "result": [
+      {
+        "metric": {
+          "__name__": "nginx_connections_active",
+          "instance": "nginx-exporter:9113",
+          "job": "nginx"
+        },
+        "value": [
+          1792419589.246,
+          "1"
+        ]
+      }
+    ]
+  }
+}
+
+[Postgres Up Status]:
+{
+  "status": "success",
+  "data": {
+    "resultType": "vector",
+    "result": [
+      {
+        "metric": {
+          "__name__": "pg_up",
+          "instance": "postgres-exporter:9187",
+          "job": "postgres"
+        },
+        "value": [
+          1792419589.262,
+          "1"
+        ]
+      }
+    ]
+  }
+}
+
+[Postgres Transactions Commit Count (datname=crm)]:
+{
+  "status": "success",
+  "data": {
+    "resultType": "vector",
+    "result": [
+      {
+        "metric": {
+          "__name__": "pg_stat_database_xact_commit",
+          "datid": "16384",
+          "datname": "crm",
+          "instance": "postgres-exporter:9187",
+          "job": "postgres"
+        },
+        "value": [
+          1792419589.277,
+          "24859"
+        ]
+      }
+    ]
+  }
+}
+
+[Container Memory Usage (sample)]:
+
+--- 4. SINH TẢI (200 requests HTTPS vào CRM Web & DB) ---
+Đã thực hiện 200 requests thành công.
+--- 5. METRIC SAU KHI SINH TẢI (KIỂM TRA THAY ĐỔI) ---
+[Nginx Requests Total]:
+{
+  "status": "success",
+  "data": {
+    "resultType": "vector",
+    "result": [
+      {
+        "metric": {
+          "__name__": "nginx_http_requests_total",
+          "instance": "nginx-exporter:9113",
+          "job": "nginx"
+        },
+        "value": [
+          1792419614.006,
+          "439"
+        ]
+      }
+    ]
+  }
+}
+
+[Postgres Transactions Commit Count sau tải]:
+{
+  "status": "success",
+  "data": {
+    "resultType": "vector",
+    "result": [
+      {
+        "metric": {
+          "__name__": "pg_stat_database_xact_commit",
+          "datid": "16384",
+          "datname": "crm",
+          "instance": "postgres-exporter:9187",
+          "job": "postgres"
+        },
+        "value": [
+          1792419614.088,
+          "24888"
+        ]
+      }
+    ]
+  }
+}
+
+--- 6. KIỂM TRA GRAFANA HTTP ENDPOINT VÀ PROVISIONING API ---
+[CURL Header https://localhost/grafana/]:
+HTTP/2 302 
+server: nginx
+date: Mon, 19 Oct 2026 14:20:14 GMT
+content-type: text/html; charset=utf-8
+cache-control: no-store
+location: /grafana/login
+set-cookie: redirect_to=%2Fgrafana%2F; Path=/grafana; HttpOnly; SameSite=Lax
+x-content-type-options: nosniff
+x-frame-options: deny
+x-xss-protection: 1; mode=block
+content-security-policy: default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; img-src 'self' data: blob:;
+x-frame-options: SAMEORIGIN
+x-content-type-options: nosniff
+x-xss-protection: 1; mode=block
+referrer-policy: strict-origin-when-cross-origin
+strict-transport-security: max-age=31536000; includeSubDomains
+
+
+[Grafana Datasources API]:
+[
+  {
+    "id": 1,
+    "uid": "loki",
+    "orgId": 1,
+    "name": "Loki",
+    "type": "loki",
+    "typeName": "Loki",
+    "typeLogoUrl": "public/app/plugins/datasource/loki/img/loki_icon.svg",
+    "access": "proxy",
+    "url": "http://loki:3100",
+    "user": "",
+    "database": "",
+    "basicAuth": false,
+    "isDefault": false,
+    "jsonData": {
+      "maxLines": 2000
+    },
+    "readOnly": true
+  },
+  {
+    "id": 3,
+    "uid": "bg1p7wxz7yu4ge",
+    "orgId": 1,
+    "name": "loki-1",
+    "type": "loki",
+    "typeName": "Loki",
+    "typeLogoUrl": "public/app/plugins/datasource/loki/img/loki_icon.svg",
+    "access": "proxy",
+    "url": "",
+    "user": "",
+    "database": "",
+    "basicAuth": false,
+    "isDefault": false,
+    "jsonData": {},
+    "readOnly": false
+  },
+  {
+    "id": 2,
+    "uid": "PBFA97CFB590B2093",
+    "orgId": 1,
+    "name": "Prometheus",
+    "type": "prometheus",
+    "typeName": "Prometheus",
+    "typeLogoUrl": "public/app/plugins/datasource/prometheus/img/prometheus_logo.svg",
+    "access": "proxy",
+    "url": "http://prometheus:9090",
+    "user": "",
+    "database": "",
+    "basicAuth": false,
+    "isDefault": true,
+    "jsonData": {},
+    "readOnly": true
+  }
+]
+
+[Grafana Provisioned Dashboards API]:
+[
+  {
+    "id": 1,
+    "uid": "fg1oz6uh1dhq8f",
+    "title": "CRM",
+    "uri": "db/crm",
+    "url": "/grafana/dashboards/f/fg1oz6uh1dhq8f/crm",
+    "slug": "",
+    "type": "dash-folder",
+    "tags": [],
+    "isStarred": false,
+    "sortMeta": 0,
+    "isDeleted": false
+  },
+  {
+    "id": 2,
+    "uid": "crm-containers",
+    "title": "CRM - Containers",
+    "uri": "db/crm-containers",
+    "url": "/grafana/d/crm-containers/crm-containers",
+    "slug": "",
+    "type": "dash-db",
+    "tags": [
+      "cadvisor",
+      "containers",
+      "crm"
+    ],
+    "isStarred": false,
+    "folderId": 1,
+    "folderUid": "fg1oz6uh1dhq8f",
+    "folderTitle": "CRM",
+    "folderUrl": "/grafana/dashboards/f/fg1oz6uh1dhq8f/CRM",
+    "sortMeta": 0,
+    "isDeleted": false
+  },
+  {
+    "id": 3,
+    "uid": "crm-logs",
+    "title": "CRM - Logs",
+    "uri": "db/crm-logs",
+    "url": "/grafana/d/crm-logs/crm-logs",
+    "slug": "",
+    "type": "dash-db",
+    "tags": [
+      "crm",
+      "logs",
+      "loki",
+      "security"
+    ],
+    "isStarred": false,
+    "folderId": 1,
+    "folderUid": "fg1oz6uh1dhq8f",
+    "folderTitle": "CRM",
+    "folderUrl": "/grafana/dashboards/f/fg1oz6uh1dhq8f/CRM",
+    "sortMeta": 0,
+    "isDeleted": false
+  },
+  {
+    "id": 4,
+    "uid": "crm-nginx",
+    "title": "CRM - Nginx",
+    "uri": "db/crm-nginx",
+    "url": "/grafana/d/crm-nginx/crm-nginx",
+    "slug": "",
+    "type": "dash-db",
+    "tags": [
+      "crm",
+      "nginx"
+    ],
+    "isStarred": false,
+    "folderId": 1,
+    "folderUid": "fg1oz6uh1dhq8f",
+    "folderTitle": "CRM",
+    "folderUrl": "/grafana/dashboards/f/fg1oz6uh1dhq8f/CRM",
+    "sortMeta": 0,
+    "isDeleted": false
+  },
+  {
+    "id": 5,
+    "uid": "crm-postgresql",
+    "title": "CRM - PostgreSQL",
+    "uri": "db/crm-postgresql",
+    "url": "/grafana/d/crm-postgresql/crm-postgresql",
+    "slug": "",
+    "type": "dash-db",
+    "tags": [
+      "crm",
+      "database",
+      "postgresql"
+    ],
+    "isStarred": false,
+    "folderId": 1,
+    "folderUid": "fg1oz6uh1dhq8f",
+    "folderTitle": "CRM",
+    "folderUrl": "/grafana/dashboards/f/fg1oz6uh1dhq8f/CRM",
+    "sortMeta": 0,
+    "isDeleted": false
+  }
+]
+

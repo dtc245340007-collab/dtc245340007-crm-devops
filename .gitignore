@@ -3,11 +3,14 @@
 .env.*
 !.env.example
 
-# SSL / TLS Keys
+# SSL / TLS Keys & Certificates
 nginx/certs/*.key
+nginx/certs/*.crt
+!nginx/certs/.gitkeep
+*.key
+*.pem
 
 # Evidence & reports
-evidence/
 
 # Volume data & databases
 *data/

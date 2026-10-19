@@ -1,0 +1,258 @@
+================================================================================
+ EVIDENCE B??C 5: K?CH B?N S? C? AN TO?N TH?NG TIN & TRUY V?T LOG
+ K?ch b?n: Brute-Force / Ph? ho?i x?c th?c v?o h? th?ng CRM
+ Th?i gian: Mon Oct 19 05:20:51 PM +07 2026
+ MSSV: dtc245340007 - NGUYEN THI QUYNH THO
+================================================================================
+
+=== 1. CH?Y K?CH B?N T?N C?NG GI? L?P (scripts/simulate_bruteforce.sh) ===
+====================================================================
+ [START] K?CH B?N M? PH?NG T?N C?NG BRUTE-FORCE X?C TH?C
+ M?c ti?u: https://192.168.207.128/login
+ T?i kho?n m?c ti?u: admin
+ S? l??ng request: 20
+ Kho?ng c?ch g?i: 0.5s
+ Th?i gian b?t ??u: 2026-10-19T10:20:51Z
+====================================================================
+[1/2] ?ang k?t n?i t?i https://192.168.207.128/login ?? nh?n CSRF Token v? Session Cookie...
+[+] CSRF Token: e27705b5c4793df7... (?? tr?ch xu?t th?nh c?ng)
+
+[2/2] B?t ??u g?i li?n ti?p 20 requests ??ng nh?p sai...
+--------------------------------------------------------------------
+STT  | Th?i gian    | Password Th?    | HTTP     | K?t qu?             
+--------------------------------------------------------------------
+#1   | 17:20:51     | 123456          | 200      | HTTP Code: 200      
+#2   | 17:20:51     | password        | 200      | HTTP Code: 200      
+#3   | 17:20:52     | 12345678        | 200      | HTTP Code: 200      
+#4   | 17:20:53     | admin123        | 200      | HTTP Code: 200      
+#5   | 17:20:53     | qwerty          | 200      | HTTP Code: 200      
+#6   | 17:20:54     | letmein         | 200      | HTTP Code: 200      
+#7   | 17:20:54     | welcome1        | 200      | HTTP Code: 200      
+#8   | 17:20:55     | monkey          | 200      | HTTP Code: 200      
+#9   | 17:20:56     | football        | 200      | HTTP Code: 200      
+#10  | 17:20:56     | iloveyou        | 200      | HTTP Code: 200      
+#11  | 17:20:57     | secret123       | 200      | HTTP Code: 200      
+#12  | 17:20:58     | trustno1        | 200      | HTTP Code: 200      
+#13  | 17:20:58     | superman        | 200      | HTTP Code: 200      
+#14  | 17:20:59     | batman2026      | 200      | HTTP Code: 200      
+#15  | 17:20:59     | dragon          | 200      | HTTP Code: 200      
+#16  | 17:21:00     | shadow          | 200      | HTTP Code: 200      
+#17  | 17:21:01     | master          | 200      | HTTP Code: 200      
+#18  | 17:21:01     | hacker123       | 200      | HTTP Code: 200      
+#19  | 17:21:02     | crmpass2026     | 200      | HTTP Code: 200      
+#20  | 17:21:03     | wrongpass99     | 200      | HTTP Code: 200      
+--------------------------------------------------------------------
+ [HO?N T?T] ?? g?i ?? 20 requests trong 12s.
+ Th?i gian k?t th?c: 2026-10-19T10:21:03Z
+====================================================================
+
+=== 2. TR?NG TH?I ALERT TR?N GRAFANA ALERTING (API) ===
+Endpoint: /grafana/api/prometheus/grafana/api/v1/alerts
+{
+  "status": "success",
+  "data": {
+    "alerts": [
+      {
+        "labels": {
+          "alertname": "CRM_BruteForce_Detected",
+          "grafana_folder": "CRM",
+          "severity": "critical"
+        },
+        "annotations": {
+          "description": "More than 5 LOGIN_FAILED events detected in 1 minute from CRM Webapp.",
+          "summary": "CRM Brute-Force Authentication Attack Detected"
+        },
+        "state": "Alerting",
+        "activeAt": "2026-10-19T10:21:00Z",
+        "value": "1e+00"
+      }
+    ]
+  }
+}
+
+Endpoint: /grafana/api/prometheus/grafana/api/v1/rules
+{
+  "name": "CRM_BruteForce_Detected",
+  "state": "firing",
+  "health": "ok",
+  "lastEvaluation": "2026-10-19T10:21:10Z",
+  "alerts": [
+    {
+      "labels": {
+        "alertname": "CRM_BruteForce_Detected",
+        "grafana_folder": "CRM",
+        "severity": "critical"
+      },
+      "annotations": {
+        "description": "More than 5 LOGIN_FAILED events detected in 1 minute from CRM Webapp.",
+        "summary": "CRM Brute-Force Authentication Attack Detected"
+      },
+      "state": "Alerting",
+      "activeAt": "2026-10-19T10:21:00Z",
+      "value": "1e+00"
+    }
+  ]
+}
+
+=== 3. LOG T? SERVICE ALERT-SINK (NH?N WEBHOOK C?NH B?O) ===
+    Summary:    CRM Brute-Force Authentication Attack Detected
+    Desc:       More than 5 LOGIN_FAILED events detected in 1 minute from CRM Webapp.
+    StartsAt:   2026-10-19T10:17:50Z
+=======================================================
+
+[ALERT-SINK HTTP] 172.25.0.8 - "POST /alert HTTP/1.1" 200 -
+[ALERT-SINK HTTP] 127.0.0.1 - "GET /alerts HTTP/1.1" 200 -
+
+=======================================================
+[ALERT-SINK] WEBHOOK ALERT RECEIVED AT 2026-10-19T10:18:50.039806Z
+Endpoint: /alert
+Alert Details:
+  - Alert Name: CRM_BruteForce_Detected
+    Status:     firing
+    Severity:   critical
+    Summary:    CRM Brute-Force Authentication Attack Detected
+    Desc:       More than 5 LOGIN_FAILED events detected in 1 minute from CRM Webapp.
+    StartsAt:   2026-10-19T10:18:30Z
+=======================================================
+
+[ALERT-SINK HTTP] 172.25.0.8 - "POST /alert HTTP/1.1" 200 -
+
+=======================================================
+[ALERT-SINK] WEBHOOK ALERT RECEIVED AT 2026-10-19T10:19:59.204372Z
+Endpoint: /alert
+Alert Details:
+  - Alert Name: CRM_BruteForce_Detected
+    Status:     resolved
+    Severity:   critical
+    Summary:    CRM Brute-Force Authentication Attack Detected
+    Desc:       More than 5 LOGIN_FAILED events detected in 1 minute from CRM Webapp.
+    StartsAt:   2026-10-19T10:18:30Z
+=======================================================
+
+[ALERT-SINK HTTP] 172.25.0.8 - "POST /alert HTTP/1.1" 200 -
+
+Payload JSON chi ti?t l?u t?i alert-sink (/alerts):
+{
+  "received_at": "2026-10-19T10:19:59.204372Z",
+  "path": "/alert",
+  "payload": {
+    "receiver": "alert-sink",
+    "status": "resolved",
+    "alerts": [
+      {
+        "status": "resolved",
+        "labels": {
+          "alertname": "CRM_BruteForce_Detected",
+          "grafana_folder": "CRM",
+          "severity": "critical"
+        },
+        "annotations": {
+          "description": "More than 5 LOGIN_FAILED events detected in 1 minute from CRM Webapp.",
+          "summary": "CRM Brute-Force Authentication Attack Detected"
+        },
+        "startsAt": "2026-10-19T10:18:30Z",
+        "endsAt": "2026-10-19T10:19:50Z",
+        "generatorURL": "https://192.168.207.128/grafana/alerting/grafana/crm_bruteforce_detected/view?orgId=1",
+        "fingerprint": "b9044fdc19fbefd9",
+        "silenceURL": "https://192.168.207.128/grafana/alerting/silence/new?alertmanager=grafana&matcher=alertname%3DCRM_BruteForce_Detected&matcher=grafana_folder%3DCRM&matcher=severity%3Dcritical&orgId=1",
+        "dashboardURL": "",
+        "panelURL": "",
+        "values": {
+          "B": 5,
+          "C": 0
+        },
+        "valueString": "[ var='B' labels={} value=5 ], [ var='C' labels={} value=0 ]"
+      }
+    ],
+    "groupLabels": {
+      "alertname": "CRM_BruteForce_Detected"
+    },
+    "commonLabels": {
+      "alertname": "CRM_BruteForce_Detected",
+      "grafana_folder": "CRM",
+      "severity": "critical"
+    },
+    "commonAnnotations": {
+      "description": "More than 5 LOGIN_FAILED events detected in 1 minute from CRM Webapp.",
+      "summary": "CRM Brute-Force Authentication Attack Detected"
+    },
+    "externalURL": "https://192.168.207.128/grafana/",
+    "version": "1",
+    "groupKey": "{}:{alertname=\"CRM_BruteForce_Detected\"}",
+    "truncatedAlerts": 0,
+    "orgId": 1,
+    "title": "[RESOLVED] CRM_BruteForce_Detected (CRM critical)",
+    "state": "ok",
+    "message": "**Resolved**\n\nValue: B=5, C=0\nLabels:\n - alertname = CRM_BruteForce_Detected\n - grafana_folder = CRM\n - severity = critical\nAnnotations:\n - description = More than 5 LOGIN_FAILED events detected in 1 minute from CRM Webapp.\n - summary = CRM Brute-Force Authentication Attack Detected\nSource: https://192.168.207.128/grafana/alerting/grafana/crm_bruteforce_detected/view?orgId=1\nSilence: https://192.168.207.128/grafana/alerting/silence/new?alertmanager=grafana&matcher=alertname%3DCRM_BruteForce_Detected&matcher=grafana_folder%3DCRM&matcher=severity%3Dcritical&orgId=1\n"
+  }
+}
+
+=== 4. TRUY V?T S? C? QUA 3 G?C NH?N T? LOG LOKI ===
+
+--- G?C NH?N 1: LOG T? NGINX REVERSE PROXY ---
+Truy v?n: {job="nginx"} |= "POST /login"
+192.168.207.128 - - [19/Oct/2026:10:21:03 +0000] "POST /login HTTP/2.0" 200 1723 "-" "curl/8.18.0" rt=0.088 uct="0.001" uht="0.088" urt="0.088" xff="-"
+192.168.207.128 - - [19/Oct/2026:10:21:02 +0000] "POST /login HTTP/2.0" 200 1723 "-" "curl/8.18.0" rt=0.087 uct="0.001" uht="0.087" urt="0.087" xff="-"
+192.168.207.128 - - [19/Oct/2026:10:21:01 +0000] "POST /login HTTP/2.0" 200 1723 "-" "curl/8.18.0" rt=0.101 uct="0.000" uht="0.100" urt="0.101" xff="-"
+192.168.207.128 - - [19/Oct/2026:10:21:01 +0000] "POST /login HTTP/2.0" 200 1723 "-" "curl/8.18.0" rt=0.110 uct="0.001" uht="0.110" urt="0.110" xff="-"
+192.168.207.128 - - [19/Oct/2026:10:21:00 +0000] "POST /login HTTP/2.0" 200 1723 "-" "curl/8.18.0" rt=0.107 uct="0.001" uht="0.107" urt="0.107" xff="-"
+192.168.207.128 - - [19/Oct/2026:10:21:00 +0000] "POST /login HTTP/2.0" 200 1723 "-" "curl/8.18.0" rt=0.122 uct="0.000" uht="0.122" urt="0.122" xff="-"
+192.168.207.128 - - [19/Oct/2026:10:20:59 +0000] "POST /login HTTP/2.0" 200 1723 "-" "curl/8.18.0" rt=0.095 uct="0.000" uht="0.096" urt="0.096" xff="-"
+192.168.207.128 - - [19/Oct/2026:10:20:58 +0000] "POST /login HTTP/2.0" 200 1723 "-" "curl/8.18.0" rt=0.087 uct="0.000" uht="0.087" urt="0.087" xff="-"
+192.168.207.128 - - [19/Oct/2026:10:20:58 +0000] "POST /login HTTP/2.0" 200 1723 "-" "curl/8.18.0" rt=0.095 uct="0.000" uht="0.095" urt="0.095" xff="-"
+192.168.207.128 - - [19/Oct/2026:10:20:57 +0000] "POST /login HTTP/2.0" 200 1723 "-" "curl/8.18.0" rt=0.090 uct="0.000" uht="0.090" urt="0.090" xff="-"
+192.168.207.128 - - [19/Oct/2026:10:20:56 +0000] "POST /login HTTP/2.0" 200 1723 "-" "curl/8.18.0" rt=0.091 uct="0.001" uht="0.091" urt="0.091" xff="-"
+192.168.207.128 - - [19/Oct/2026:10:20:56 +0000] "POST /login HTTP/2.0" 200 1723 "-" "curl/8.18.0" rt=0.111 uct="0.000" uht="0.111" urt="0.111" xff="-"
+192.168.207.128 - - [19/Oct/2026:10:20:55 +0000] "POST /login HTTP/2.0" 200 1723 "-" "curl/8.18.0" rt=0.088 uct="0.000" uht="0.088" urt="0.088" xff="-"
+192.168.207.128 - - [19/Oct/2026:10:20:55 +0000] "POST /login HTTP/2.0" 200 1723 "-" "curl/8.18.0" rt=0.109 uct="0.000" uht="0.109" urt="0.109" xff="-"
+192.168.207.128 - - [19/Oct/2026:10:20:54 +0000] "POST /login HTTP/2.0" 200 1723 "-" "curl/8.18.0" rt=0.104 uct="0.000" uht="0.104" urt="0.104" xff="-"
+192.168.207.128 - - [19/Oct/2026:10:20:53 +0000] "POST /login HTTP/2.0" 200 1723 "-" "curl/8.18.0" rt=0.094 uct="0.000" uht="0.094" urt="0.094" xff="-"
+192.168.207.128 - - [19/Oct/2026:10:20:53 +0000] "POST /login HTTP/2.0" 200 1723 "-" "curl/8.18.0" rt=0.090 uct="0.000" uht="0.090" urt="0.090" xff="-"
+192.168.207.128 - - [19/Oct/2026:10:20:52 +0000] "POST /login HTTP/2.0" 200 1723 "-" "curl/8.18.0" rt=0.086 uct="0.001" uht="0.086" urt="0.086" xff="-"
+192.168.207.128 - - [19/Oct/2026:10:20:51 +0000] "POST /login HTTP/2.0" 200 1723 "-" "curl/8.18.0" rt=0.095 uct="0.001" uht="0.095" urt="0.095" xff="-"
+192.168.207.128 - - [19/Oct/2026:10:20:51 +0000] "POST /login HTTP/2.0" 200 1723 "-" "curl/8.18.0" rt=0.100 uct="0.000" uht="0.100" urt="0.100" xff="-"
+
+--- G?C NH?N 2: LOG T? WEB APP FLASK (LOGIN_FAILED) ---
+Truy v?n: {job="webapp"} |= "LOGIN_FAILED"
+LOGIN_FAILED ip=192.168.207.128 user=admin reason=wrong_password
+LOGIN_FAILED ip=192.168.207.128 user=admin reason=wrong_password
+LOGIN_FAILED ip=192.168.207.128 user=admin reason=wrong_password
+LOGIN_FAILED ip=192.168.207.128 user=admin reason=wrong_password
+LOGIN_FAILED ip=192.168.207.128 user=admin reason=wrong_password
+LOGIN_FAILED ip=192.168.207.128 user=admin reason=wrong_password
+LOGIN_FAILED ip=192.168.207.128 user=admin reason=wrong_password
+LOGIN_FAILED ip=192.168.207.128 user=admin reason=wrong_password
+LOGIN_FAILED ip=192.168.207.128 user=admin reason=wrong_password
+LOGIN_FAILED ip=192.168.207.128 user=admin reason=wrong_password
+LOGIN_FAILED ip=192.168.207.128 user=admin reason=wrong_password
+LOGIN_FAILED ip=192.168.207.128 user=admin reason=wrong_password
+LOGIN_FAILED ip=192.168.207.128 user=admin reason=wrong_password
+LOGIN_FAILED ip=192.168.207.128 user=admin reason=wrong_password
+LOGIN_FAILED ip=192.168.207.128 user=admin reason=wrong_password
+LOGIN_FAILED ip=192.168.207.128 user=admin reason=wrong_password
+LOGIN_FAILED ip=192.168.207.128 user=admin reason=wrong_password
+LOGIN_FAILED ip=192.168.207.128 user=admin reason=wrong_password
+LOGIN_FAILED ip=192.168.207.128 user=admin reason=wrong_password
+LOGIN_FAILED ip=192.168.207.128 user=admin reason=wrong_password
+
+--- G?C NH?N 3: LOG T? ALERT-SINK TRONG LOKI ---
+Truy v?n: {job="alert-sink"}
+[ALERT-SINK HTTP] 127.0.0.1 - "GET /alerts HTTP/1.1" 200 -
+[ALERT-SINK HTTP] 172.25.0.8 - "POST /alert HTTP/1.1" 200 -
+
+=======================================================
+    StartsAt:   2026-10-19T10:18:30Z
+    Desc:       More than 5 LOGIN_FAILED events detected in 1 minute from CRM Webapp.
+    Summary:    CRM Brute-Force Authentication Attack Detected
+    Severity:   critical
+    Status:     resolved
+  - Alert Name: CRM_BruteForce_Detected
+Alert Details:
+Endpoint: /alert
+[ALERT-SINK] WEBHOOK ALERT RECEIVED AT 2026-10-19T10:19:59.204372Z
+=======================================================
+
+
+================================================================================
+ HO?N T?T GHI EVIDENCE S? C? B??C 5
+================================================================================

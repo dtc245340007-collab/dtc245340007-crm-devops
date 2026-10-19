@@ -16,13 +16,38 @@ from .auth import (
 
 def create_app():
     app = Flask(__name__)
-    app.secret_key = os.environ.get("SECRET_KEY", secrets.token_hex(32))
     
-    # Session cookie hardening
+    # SECRET_KEY hardening: Bắt buộc cấu hình secret mạnh trong môi trường production
+    flask_env = os.environ.get("FLASK_ENV", "production").strip().lower()
+    raw_secret = os.environ.get("SECRET_KEY", "").strip()
+    insecure_placeholders = {
+        "", "your_secure_secret_key_here", "change-me", "secret", "secret_key",
+        "default", "crm-dev-key", "12345678"
+    }
+
+    if flask_env == "production":
+        if not raw_secret or raw_secret in insecure_placeholders or len(raw_secret) < 32:
+            raise RuntimeError(
+                "CRITICAL SECURITY ERROR: Trong môi trường production, biến môi trường SECRET_KEY "
+                "bắt buộc phải được thiết lập với secret mạnh (tối thiểu 32 ký tự), không được dùng "
+                "placeholder hoặc để ứng dụng tự sinh ngẫu nhiên sau mỗi lần khởi động!"
+            )
+        app.secret_key = raw_secret
+    else:
+        # Development mode fallback
+        if not raw_secret or raw_secret in insecure_placeholders:
+            import warnings
+            warnings.warn("SECRET_KEY đang dùng giá trị development tạm thời. Không dùng cấu hình này trên production!", RuntimeWarning)
+            app.secret_key = raw_secret or "dev-insecure-secret-key-at-least-32-chars-long"
+        else:
+            app.secret_key = raw_secret
+    
+    # Session cookie hardening (chỉ kích hoạt Secure khi chạy HTTPS)
+    cookie_secure = os.environ.get("SESSION_COOKIE_SECURE", "true").lower() in ("true", "1", "yes")
     app.config.update(
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SAMESITE="Lax",
-        SESSION_COOKIE_SECURE=False  # Step 3 will enable HTTPS
+        SESSION_COOKIE_SECURE=cookie_secure
     )
 
     # ProxyFix to trust reverse proxy headers (X-Forwarded-For, X-Forwarded-Proto)

@@ -1,0 +1,43 @@
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# SSL / TLS Keys
+nginx/certs/*.key
+
+# Evidence & reports
+evidence/
+
+# Volume data & databases
+*data/
+postgres_data/
+pgadmin_data/
+prometheus_data/
+grafana_data/
+loki_data/
+*.sqlite3
+*.db
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Logs
+*.log
+logs/
+
+# OS / Editor
+.DS_Store
+.idea/
+.vscode/
+*.swp

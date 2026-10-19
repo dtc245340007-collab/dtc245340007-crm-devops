@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}404 - Không tìm thấy trang{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 600px; margin: 3rem auto; text-align: center; padding: 2.5rem;">
+    <h1 style="font-size: 3rem; color: var(--secondary); margin-bottom: 0.5rem;">404</h1>
+    <h2 style="font-size: 1.25rem; margin-bottom: 1rem;">Không tìm thấy trang (Not Found)</h2>
+    <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
+        Đường dẫn bạn yêu cầu không tồn tại hoặc đã bị di chuyển.
+    </p>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-primary">Quay lại Trang chủ</a>
+</div>
+{% endblock %}

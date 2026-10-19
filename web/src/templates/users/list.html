@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Quản lý Nhân viên - CRM{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+    <div>
+        <h1 style="font-size: 1.5rem; font-weight: 700;">Quản lý Nhân viên</h1>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">
+            Danh sách tài khoản hệ thống và phân quyền (Chỉ Quản lý)
+        </p>
+    </div>
+    <a href="{{ url_for('user_new') }}" class="btn btn-primary">
+        + Thêm nhân viên mới
+    </a>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Tên đăng nhập</th>
+                    <th>Họ và tên</th>
+                    <th>Vai trò</th>
+                    <th>Khách hàng phụ trách</th>
+                    <th>Trạng thái</th>
+                    <th>Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td>{{ u.id }}</td>
+                    <td><strong>{{ u.username }}</strong></td>
+                    <td>{{ u.full_name }}</td>
+                    <td>
+                        <span class="badge badge-{{ u.role }}">
+                            {{ 'Quản lý' if u.role == 'manager' else 'Nhân viên' }}
+                        </span>
+                    </td>
+                    <td>{{ u.assigned_count }} khách hàng</td>
+                    <td>
+                        {% if u.is_active %}
+                        <span class="badge badge-active">Hoạt động</span>
+                        {% else %}
+                        <span class="badge badge-danger">Đã khóa</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: 0.35rem; align-items: center;">
+                            <a href="{{ url_for('user_edit', id=u.id) }}" class="btn btn-secondary btn-sm">Sửa</a>
+                            
+                            <!-- Toggle Status Form -->
+                            {% if u.id != current_user.id %}
+                            <form action="{{ url_for('user_toggle_status', id=u.id) }}" method="POST" onsubmit="return confirm('Bạn có chắc muốn {{ 'khóa' if u.is_active else 'mở khóa' }} tài khoản này?');" style="display:inline;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-{{ 'warning' if u.is_active else 'success' }} btn-sm">
+                                    {{ 'Khóa' if u.is_active else 'Kích hoạt' }}
+                                </button>
+                            </form>
+                            {% endif %}
+
+                            <!-- Reset Password details -->
+                            <details style="display: inline-block;">
+                                <summary class="btn btn-secondary btn-sm" style="list-style: none; cursor: pointer;">Đổi pass</summary>
+                                <div style="position: absolute; right: 2rem; background: #fff; border: 1px solid var(--border-color); padding: 0.75rem; border-radius: 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 10;">
+                                    <form action="{{ url_for('user_reset_password', id=u.id) }}" method="POST">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <div style="font-size: 0.8rem; margin-bottom: 0.35rem;">Đặt mật khẩu mới cho {{ u.username }}:</div>
+                                        <input type="password" name="new_password" class="form-control" style="margin-bottom: 0.5rem; font-size: 0.8rem;" placeholder="Mật khẩu >= 6 ký tự" required>
+                                        <button type="submit" class="btn btn-primary btn-sm" style="width: 100%;">Lưu</button>
+                                    </form>
+                                </div>
+                            </details>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

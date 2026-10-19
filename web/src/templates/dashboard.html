@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Bảng điều khiển - CRM{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+    <div>
+        <h1 style="font-size: 1.5rem; font-weight: 700;">Bảng điều khiển</h1>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">
+            Tổng quan công việc và nhắc lịch chăm sóc khách hàng
+        </p>
+    </div>
+    <a href="{{ url_for('customer_new') }}" class="btn btn-primary">
+        + Thêm khách hàng mới
+    </a>
+</div>
+
+<!-- Stat Cards -->
+<div class="stats-grid">
+    <div class="stat-card total">
+        <span class="stat-label">Tổng khách hàng {% if current_user.role == 'staff' %}(Được phân công){% endif %}</span>
+        <span class="stat-value">{{ total_customers }}</span>
+    </div>
+    <div class="stat-card lead">
+        <span class="stat-label">Tiềm năng (Lead)</span>
+        <span class="stat-value">{{ counts.lead }}</span>
+    </div>
+    <div class="stat-card active">
+        <span class="stat-label">Đang hoạt động (Active)</span>
+        <span class="stat-value">{{ counts.active }}</span>
+    </div>
+    <div class="stat-card inactive">
+        <span class="stat-label">Ngừng hoạt động (Inactive)</span>
+        <span class="stat-value">{{ counts.inactive }}</span>
+    </div>
+</div>
+
+<!-- Reminders & Follow-ups Table -->
+<div class="card">
+    <div class="card-header">
+        <h2>Lịch nhắc chăm sóc khách hàng cần xử lý (Hôm nay & Quá hạn)</h2>
+        <span class="badge badge-lead">{{ reminders|length }} việc cần làm</span>
+    </div>
+
+    {% if reminders %}
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Hạn nhắc</th>
+                    <th>Mã KH</th>
+                    <th>Khách hàng</th>
+                    <th>Người liên hệ</th>
+                    <th>SĐT</th>
+                    <th>Nội dung tương tác gần nhất</th>
+                    {% if current_user.role == 'manager' %}
+                    <th>Phụ trách</th>
+                    {% endif %}
+                    <th>Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in reminders %}
+                <tr>
+                    <td>
+                        <strong style="color: {% if r.next_follow_up < today %}var(--danger){% else %}var(--warning){% endif %};">
+                            {{ r.next_follow_up.strftime('%d/%m/%Y') }}
+                            {% if r.next_follow_up < today %}
+                            <small>(Quá hạn)</small>
+                            {% elif r.next_follow_up == today %}
+                            <small>(Hôm nay)</small>
+                            {% endif %}
+                        </strong>
+                    </td>
+                    <td><code>{{ r.customer_code }}</code></td>
+                    <td><strong>{{ r.customer_name }}</strong></td>
+                    <td>{{ r.contact_name or 'Chưa chọn' }}</td>
+                    <td>{{ r.customer_phone or '-' }}</td>
+                    <td>
+                        <span class="badge badge-{{ r.type }}">{{ r.type }}</span>
+                        {{ r.subject }}
+                    </td>
+                    {% if current_user.role == 'manager' %}
+                    <td>{{ r.staff_name }}</td>
+                    {% endif %}
+                    <td>
+                        <a href="{{ url_for('customer_detail', id=r.customer_id) }}" class="btn btn-secondary btn-sm">
+                            Xem chi tiết
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
+        <p>Tuyệt vời! Bạn không có lịch nhắc chăm sóc khách hàng nào cần xử lý hôm nay.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

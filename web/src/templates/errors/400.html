@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}400 - Yêu cầu không hợp lệ{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 600px; margin: 3rem auto; text-align: center; padding: 2.5rem;">
+    <h1 style="font-size: 3rem; color: var(--warning); margin-bottom: 0.5rem;">400</h1>
+    <h2 style="font-size: 1.25rem; margin-bottom: 1rem;">Yêu cầu không hợp lệ (Bad Request)</h2>
+    <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
+        {{ message or 'CSRF token không hợp lệ hoặc phiên làm việc đã hết hạn. Vui lòng thử lại.' }}
+    </p>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-primary">Quay lại Trang chủ</a>
+</div>
+{% endblock %}

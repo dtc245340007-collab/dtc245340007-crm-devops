@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Cập nhật' if customer and customer.id else 'Thêm mới' }} Khách hàng - CRM{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto;">
+    <div style="margin-bottom: 1.25rem;">
+        <a href="{{ url_for('customers_list') }}" style="color: var(--text-muted); text-decoration: none; font-size: 0.9rem;">
+            &larr; Quay lại danh sách khách hàng
+        </a>
+        <h1 style="font-size: 1.5rem; font-weight: 700; margin-top: 0.5rem;">
+            {{ 'Cập nhật thông tin Khách hàng' if customer and customer.id else 'Thêm Khách hàng Mới' }}
+        </h1>
+    </div>
+
+    <div class="card">
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="customer_code">Mã khách hàng <span style="color: var(--danger);">*</span></label>
+                    <input type="text" id="customer_code" name="customer_code" class="form-control" 
+                           value="{{ customer.customer_code if customer else '' }}" 
+                           placeholder="Ví dụ: KH-001" required>
+                </div>
+                <div class="form-group">
+                    <label for="name">Tên khách hàng / Tổ chức <span style="color: var(--danger);">*</span></label>
+                    <input type="text" id="name" name="name" class="form-control" 
+                           value="{{ customer.name if customer else '' }}" 
+                           placeholder="Nhập tên khách hàng" required>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="email">Địa chỉ Email</label>
+                    <input type="email" id="email" name="email" class="form-control" 
+                           value="{{ customer.email if customer and customer.email else '' }}" 
+                           placeholder="email@example.com">
+                </div>
+                <div class="form-group">
+                    <label for="phone">Số điện thoại</label>
+                    <input type="text" id="phone" name="phone" class="form-control" 
+                           value="{{ customer.phone if customer and customer.phone else '' }}" 
+                           placeholder="0912345678">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="company">Tên công ty / Doanh nghiệp</label>
+                    <input type="text" id="company" name="company" class="form-control" 
+                           value="{{ customer.company if customer and customer.company else '' }}" 
+                           placeholder="Công ty TNHH...">
+                </div>
+                <div class="form-group">
+                    <label for="status">Trạng thái quan hệ</label>
+                    <select id="status" name="status" class="form-control">
+                        <option value="lead" {% if customer and customer.status == 'lead' %}selected{% endif %}>Tiềm năng (Lead)</option>
+                        <option value="active" {% if customer and customer.status == 'active' %}selected{% endif %}>Đang hoạt động (Active)</option>
+                        <option value="inactive" {% if customer and customer.status == 'inactive' %}selected{% endif %}>Ngừng hoạt động (Inactive)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="address">Địa chỉ</label>
+                <textarea id="address" name="address" class="form-control" placeholder="Số nhà, đường, quận/huyện, tỉnh/thành phố...">{{ customer.address if customer and customer.address else '' }}</textarea>
+            </div>
+
+            {% if current_user.role == 'manager' %}
+            <div class="form-group">
+                <label for="assigned_to">Phân công Nhân viên Phụ trách (Chỉ Quản lý)</label>
+                <select id="assigned_to" name="assigned_to" class="form-control">
+                    <option value="">-- Chưa phân công --</option>
+                    {% for staff in staff_list %}
+                    <option value="{{ staff.id }}" {% if customer and customer.assigned_to == staff.id %}selected{% endif %}>
+                        {{ staff.full_name }} ({{ staff.role }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% else %}
+            <div style="background: #f1f5f9; padding: 0.75rem; border-radius: 6px; font-size: 0.88rem; margin-bottom: 1rem; color: var(--text-muted);">
+                Khách hàng sẽ được tự động phân công cho bạn (<strong>{{ current_user.full_name }}</strong>).
+            </div>
+            {% endif %}
+
+            <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
+                <button type="submit" class="btn btn-primary">
+                    {{ 'Lưu thay đổi' if customer and customer.id else 'Tạo khách hàng' }}
+                </button>
+                <a href="{{ url_for('customers_list') }}" class="btn btn-secondary">Hủy bỏ</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

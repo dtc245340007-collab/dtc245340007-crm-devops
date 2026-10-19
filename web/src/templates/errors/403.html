@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}403 - Quyền truy cập bị từ chối{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 600px; margin: 3rem auto; text-align: center; padding: 2.5rem;">
+    <h1 style="font-size: 3rem; color: var(--danger); margin-bottom: 0.5rem;">403</h1>
+    <h2 style="font-size: 1.25rem; margin-bottom: 1rem;">Truy cập bị từ chối (Forbidden)</h2>
+    <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
+        Bạn không có quyền hạn truy cập tài nguyên hoặc thực hiện hành động này. Tính năng chỉ dành riêng cho Quản lý hoặc nhân viên được phân công.
+    </p>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-primary">Quay lại Trang chủ</a>
+</div>
+{% endblock %}

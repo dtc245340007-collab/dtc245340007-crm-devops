@@ -93,6 +93,7 @@ services:
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
     depends_on:
       - prometheus
+      - loki
 
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:v0.49.1
@@ -127,8 +128,36 @@ services:
       db:
         condition: service_healthy
 
+  loki:
+    image: grafana/loki:2.9.2
+    restart: unless-stopped
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./loki/loki-config.yaml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
+
+  promtail:
+    image: grafana/promtail:3.0.0
+    restart: unless-stopped
+    user: root
+    command: -config.file=/etc/promtail/config.yml
+    volumes:
+      - ./promtail/promtail-config.yaml:/etc/promtail/config.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    depends_on:
+      - loki
+
+  alert-sink:
+    build:
+      context: ./alert-sink
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+
 volumes:
   db_data:
   pgadmin_data:
   prometheus_data:
   grafana_data:
+  loki_data:

@@ -131,3 +131,65 @@ chmod +x scripts/test_monitoring.sh
 ./scripts/test_monitoring.sh
 ```
 K?t qu? ghi nh?n t?i `evidence/buoc4-giamsat.txt`.
+
+---
+
+## 6. H? th?ng Qu?n tr? Nh?t k? T?p trung & C?nh b?o S? c? (Loki + Promtail)
+
+H? th?ng t?ch h?p gi?i ph?p qu?n tr? log t?p trung to?n di?n theo chu?n Cloud-Native v?i Loki, Promtail v? Grafana Alerting.
+
+### 6.1. Ki?n tr?c H? t?ng Logging
+1. **Loki (`grafana/loki:2.9.2`)**: L?u tr? v? ??nh ch? m?c metadata log theo ??nh d?ng filesystem ??n gi?n, chu k? l?u tr? (retention) 7 ng?y tr?n volume `loki_data`.
+2. **Promtail (`grafana/promtail:3.0.0`)**: Agent ??c log container qua `/var/run/docker.sock` v? `/var/lib/docker/containers/`.
+   - C? ch? ph?t hi?n t? ??ng `docker_sd_configs` v?i b? l?c ch? ??nh `com.docker.compose.project=crm`.
+   - G?n nh?n chu?n x?c: `container`, `compose_service`, v? ph?n lo?i `job`:
+     - `job="nginx"` cho Nginx Reverse Proxy.
+     - `job="webapp"` cho ?ng d?ng CRM Flask/Gunicorn.
+     - `job="postgres"` cho PostgreSQL Database.
+   - Pipeline ph?n t?ch log Nginx: Tr?ch xu?t m? ph?n h?i HTTP `status` l?m nh?n ki?m so?t (low cardinality) m? kh?ng ??nh nh?n ??a ch? IP ?? tr?nh b?ng n? cardinality.
+3. **Alert-Sink (`alert-sink`)**: D?ch v? webhook n?i b? si?u nh? ti?p nh?n v? ghi nh?n c?nh b?o s? c? b?o m?t t? Grafana Alerting.
+
+### 6.2. Dashboard "CRM - Logs"
+Truy c?p t?i: `https://192.168.207.128/grafana/d/crm-logs/crm-logs`
+Bao g?m 4 panels nghi?p v?:
+- **??ng Nh?p Th?t B?i (LOGIN_FAILED / ph?t)**: Bi?u ?? th?i gian s? l?n nh?p sai m?t kh?u theo ph?t.
+- **Top M? Tr?ng Th?i HTTP (Nginx)**: Bi?u ?? c?t ph?n b? c?c m? tr?ng th?i HTTP (200, 301, 302, 429, 500,...).
+- **CRM Webapp Logs**: Tr?c quan h?a chi ti?t log ?ng d?ng Flask v? audit trail ??ng nh?p.
+- **PostgreSQL Errors & FATAL**: Gi?m s?t c?c l?i c? ph?p, k?t n?i ho?c panic c?a c? s? d? li?u.
+
+### 6.3. T?p l?nh Truy v?n LogQL Ti?u chu?n (Q1 - Q5)
+- **Q1 (L?i HTTP 5xx Nginx):**
+  ```logql
+  {job="nginx"} |~ "\" 5[0-9]{2} "
+  ```
+- **Q2 (L?i/Ngo?i l? ?ng d?ng):**
+  ```logql
+  {job="webapp"} |~ "(?i)(error|exception|fail)"
+  ```
+- **Q3 (??ng nh?p th?t b?i):**
+  ```logql
+  {job="webapp"} |= "LOGIN_FAILED"
+  ```
+- **Q4 (Th?ng k? s? l?n login fail theo ph?t):**
+  ```logql
+  sum(count_over_time({job="webapp"} |= "LOGIN_FAILED" [1m]))
+  ```
+- **Q5 (L?i c? s? d? li?u PostgreSQL):**
+  ```logql
+  {job="postgres"} |~ "(?i)(error|fatal|panic)"
+  ```
+K?t qu? th?c thi m?u ???c l?u t?i `evidence/buoc5-logql.txt`.
+
+### 6.4. K?ch b?n S? c? An to?n Th?ng tin: Brute-Force X?c th?c
+1. **M? ph?ng t?n c?ng:**
+   ```bash
+   chmod +x scripts/simulate_bruteforce.sh
+   ./scripts/simulate_bruteforce.sh
+   ```
+2. **C? ch? C?nh b?o (Alert):**
+   - Lu?t c?nh b?o `CRM_BruteForce_Detected` t? ??ng ph?t hi?n khi `LOGIN_FAILED` v??t ng??ng 5 l?n/ph?t.
+   - Tr?ng th?i chuy?n sang `firing` v? t? ??ng b?n webhook t?i `http://alert-sink:5000/alert`.
+3. **Bi?n ph?p Ph?ng th? & Gi?m thi?u (Mitigation):**
+   - Nginx Rate Limiting ?p d?ng t?i endpoint `/login`: Gi?i h?n 5 requests/ph?t (burst=5 nodelay).
+   - T? request v??t ng??ng tr? ?i, Nginx ch? ??ng t? ch?i v?i m? **HTTP 429 Too Many Requests**, b?o v? tuy?t ??i backend web v? DB.
+4. **T?i li?u chi ti?t s? c?:** Xem t?i `docs/su-co-bruteforce.md`. Minh ch?ng ghi nh?n t?i `evidence/buoc5-sucodo.txt`.

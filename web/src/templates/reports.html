@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}Báo cáo & Thống kê - CRM{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1.5rem;">
+    <h1 style="font-size: 1.5rem; font-weight: 700;">Báo cáo Toàn Công ty</h1>
+    <p style="color: var(--text-muted); font-size: 0.9rem;">
+        Tổng hợp dữ liệu khách hàng, hoạt động tương tác và hiệu quả nhân viên (Dành riêng cho Quản lý)
+    </p>
+</div>
+
+<!-- 1. Customers by status & Top Staff Grid -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
+    <!-- Customer Status Breakdown -->
+    <div class="card" style="margin-bottom: 0;">
+        <div class="card-header">
+            <h3>Phân bố Khách hàng theo Trạng thái</h3>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 1rem; padding: 0.5rem 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span class="badge badge-lead" style="font-size: 0.9rem;">Tiềm năng (Lead)</span>
+                <span style="font-size: 1.25rem; font-weight: 700;">{{ status_dist.get('lead', 0) }}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span class="badge badge-active" style="font-size: 0.9rem;">Đang hoạt động (Active)</span>
+                <span style="font-size: 1.25rem; font-weight: 700;">{{ status_dist.get('active', 0) }}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span class="badge badge-inactive" style="font-size: 0.9rem;">Ngừng hoạt động (Inactive)</span>
+                <span style="font-size: 1.25rem; font-weight: 700;">{{ status_dist.get('inactive', 0) }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Staff by Interactions -->
+    <div class="card" style="margin-bottom: 0;">
+        <div class="card-header">
+            <h3>Top Nhân viên Tương tác Nhiều nhất</h3>
+        </div>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Hạng</th>
+                        <th>Nhân viên</th>
+                        <th>Vai trò</th>
+                        <th>Số tương tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in top_staff %}
+                    <tr>
+                        <td><strong>#{{ loop.index }}</strong></td>
+                        <td>{{ s.full_name }}</td>
+                        <td><span class="badge badge-{{ s.role }}">{{ s.role }}</span></td>
+                        <td><strong style="color: var(--primary);">{{ s.count }}</strong></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 2. Interactions by Period (Day / Week / Month) -->
+<div class="card">
+    <div class="card-header">
+        <h3>Số lượng Tương tác theo Thời gian</h3>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+        <!-- By Day -->
+        <div>
+            <h4 style="font-size: 0.95rem; margin-bottom: 0.5rem; color: var(--secondary);">7 ngày gần đây</h4>
+            <table>
+                <thead>
+                    <tr><th>Ngày</th><th>Số tương tác</th></tr>
+                </thead>
+                <tbody>
+                    {% for row in by_day %}
+                    <tr>
+                        <td>{{ row.period.strftime('%d/%m/%Y') }}</td>
+                        <td><strong>{{ row.count }}</strong></td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="2" style="color: var(--text-muted);">Không có dữ liệu</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- By Week -->
+        <div>
+            <h4 style="font-size: 0.95rem; margin-bottom: 0.5rem; color: var(--secondary);">4 tuần gần đây</h4>
+            <table>
+                <thead>
+                    <tr><th>Tuần bắt đầu từ</th><th>Số tương tác</th></tr>
+                </thead>
+                <tbody>
+                    {% for row in by_week %}
+                    <tr>
+                        <td>{{ row.period.strftime('%d/%m/%Y') }}</td>
+                        <td><strong>{{ row.count }}</strong></td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="2" style="color: var(--text-muted);">Không có dữ liệu</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- By Month -->
+        <div>
+            <h4 style="font-size: 0.95rem; margin-bottom: 0.5rem; color: var(--secondary);">6 tháng gần đây</h4>
+            <table>
+                <thead>
+                    <tr><th>Tháng</th><th>Số tương tác</th></tr>
+                </thead>
+                <tbody>
+                    {% for row in by_month %}
+                    <tr>
+                        <td>{{ row.period }}</td>
+                        <td><strong>{{ row.count }}</strong></td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="2" style="color: var(--text-muted);">Không có dữ liệu</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 3. Neglected Customers (> 30 days without contact) -->
+<div class="card">
+    <div class="card-header">
+        <h3>Khách hàng chưa được liên hệ quá 30 ngày (Cần chăm sóc ngay)</h3>
+        <span class="badge badge-danger">{{ neglected_customers|length }} khách hàng</span>
+    </div>
+    
+    {% if neglected_customers %}
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Mã KH</th>
+                    <th>Tên khách hàng</th>
+                    <th>Công ty</th>
+                    <th>Trạng thái</th>
+                    <th>Nhân viên phụ trách</th>
+                    <th>Lần tương tác cuối</th>
+                    <th>Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for nc in neglected_customers %}
+                <tr>
+                    <td><code>{{ nc.customer_code }}</code></td>
+                    <td><strong>{{ nc.name }}</strong></td>
+                    <td>{{ nc.company or '-' }}</td>
+                    <td><span class="badge badge-{{ nc.status }}">{{ nc.status }}</span></td>
+                    <td>{{ nc.assigned_name or 'Chưa phân công' }}</td>
+                    <td>
+                        {% if nc.last_interaction %}
+                        <span style="color: var(--danger);">{{ nc.last_interaction.strftime('%d/%m/%Y') }}</span>
+                        {% else %}
+                        <span style="color: var(--danger); font-style: italic;">Chưa từng tương tác</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('customer_detail', id=nc.id) }}" class="btn btn-secondary btn-sm">Xem chi tiết</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
+        <p>Tuyệt vời! Toàn bộ khách hàng đều được liên hệ và chăm sóc trong vòng 30 ngày qua.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

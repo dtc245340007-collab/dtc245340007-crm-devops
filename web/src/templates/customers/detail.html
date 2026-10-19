@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+
+{% block title %}{{ customer.name }} ({{ customer.customer_code }}) - Chi tiết Khách hàng{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1.25rem;">
+    <a href="{{ url_for('customers_list') }}" style="color: var(--text-muted); text-decoration: none; font-size: 0.9rem;">
+        &larr; Quay lại danh sách khách hàng
+    </a>
+</div>
+
+<!-- Header Card: Customer Info -->
+<div class="card">
+    <div class="card-header">
+        <div>
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <h1 style="font-size: 1.5rem; font-weight: 700;">{{ customer.name }}</h1>
+                <code>{{ customer.customer_code }}</code>
+                <span class="badge badge-{{ customer.status }}">{{ customer.status }}</span>
+            </div>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem;">
+                Công ty: <strong>{{ customer.company or 'Khách hàng cá nhân' }}</strong> &bull;
+                Phụ trách: <strong>{{ customer.assigned_name or 'Chưa phân công' }}</strong>
+            </p>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+            <a href="{{ url_for('customer_edit', id=customer.id) }}" class="btn btn-secondary">
+                Sửa thông tin
+            </a>
+            {% if current_user.role == 'manager' %}
+            <form action="{{ url_for('customer_delete', id=customer.id) }}" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn xóa hoặc chuyển trạng thái khách hàng này?');" style="display:inline;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-danger">Xóa / Khóa</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; font-size: 0.92rem;">
+        <div>
+            <span style="color: var(--text-muted);">Email:</span><br>
+            <strong>{{ customer.email or 'Chưa cập nhật' }}</strong>
+        </div>
+        <div>
+            <span style="color: var(--text-muted);">Số điện thoại:</span><br>
+            <strong>{{ customer.phone or 'Chưa cập nhật' }}</strong>
+        </div>
+        <div>
+            <span style="color: var(--text-muted);">Địa chỉ:</span><br>
+            <strong>{{ customer.address or 'Chưa cập nhật' }}</strong>
+        </div>
+        <div>
+            <span style="color: var(--text-muted);">Ngày tạo:</span><br>
+            <span>{{ customer.created_at.strftime('%d/%m/%Y %H:%M') if customer.created_at else '-' }}</span>
+        </div>
+    </div>
+</div>
+
+<!-- Section 2: Contacts -->
+<div class="card">
+    <div class="card-header">
+        <h2>Người liên hệ (Contacts)</h2>
+        <span class="badge badge-secondary">{{ contacts|length }} người liên hệ</span>
+    </div>
+
+    {% if contacts %}
+    <div class="table-responsive" style="margin-bottom: 1.5rem;">
+        <table>
+            <thead>
+                <tr>
+                    <th>Họ và tên</th>
+                    <th>Chức vụ</th>
+                    <th>Email</th>
+                    <th>Số điện thoại</th>
+                    <th>Vai trò</th>
+                    <th>Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ct in contacts %}
+                <tr>
+                    <td><strong>{{ ct.full_name }}</strong></td>
+                    <td>{{ ct.position or '-' }}</td>
+                    <td>{{ ct.email or '-' }}</td>
+                    <td>{{ ct.phone or '-' }}</td>
+                    <td>
+                        {% if ct.is_primary %}
+                        <span class="badge badge-primary-contact">&#9733; Người liên hệ chính</span>
+                        {% else %}
+                        <form action="{{ url_for('contact_set_primary', c_id=customer.id, contact_id=ct.id) }}" method="POST" style="display:inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-secondary btn-sm" title="Đặt làm người liên hệ chính">Đặt làm chính</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <form action="{{ url_for('contact_delete', c_id=customer.id, contact_id=ct.id) }}" method="POST" onsubmit="return confirm('Xác nhận xóa người liên hệ này?');" style="display:inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- Add Contact Form -->
+    <details style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: 6px; padding: 1rem;">
+        <summary style="font-weight: 600; cursor: pointer; color: var(--primary);">
+            + Thêm người liên hệ mới cho khách hàng này
+        </summary>
+        <form action="{{ url_for('contact_new', id=customer.id) }}" method="POST" style="margin-top: 1rem;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Họ và tên <span style="color: var(--danger);">*</span></label>
+                    <input type="text" name="full_name" class="form-control" placeholder="Nguyễn Văn A" required>
+                </div>
+                <div class="form-group">
+                    <label>Chức vụ / Vị trí</label>
+                    <input type="text" name="position" class="form-control" placeholder="Trưởng phòng kinh doanh">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" class="form-control" placeholder="contact@company.com">
+                </div>
+                <div class="form-group">
+                    <label>Số điện thoại</label>
+                    <input type="text" name="phone" class="form-control" placeholder="0987654321">
+                </div>
+            </div>
+            <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem;">
+                <input type="checkbox" id="is_primary" name="is_primary" value="1" {% if contacts|length == 0 %}checked{% endif %}>
+                <label for="is_primary" style="margin-bottom: 0; cursor: pointer;">Đặt làm Người liên hệ chính (Mỗi khách hàng tối đa 1 người chính)</label>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm">Lưu người liên hệ</button>
+        </form>
+    </details>
+</div>
+
+<!-- Section 3: Interactions Timeline -->
+<div class="card">
+    <div class="card-header">
+        <h2>Lịch sử Tương tác (Timeline)</h2>
+        <span class="badge badge-secondary">{{ interactions|length }} tương tác</span>
+    </div>
+
+    <!-- Add Interaction Form -->
+    <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: 6px; padding: 1.25rem; margin-bottom: 1.5rem;">
+        <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">+ Ghi nhận tương tác mới</h3>
+        <form action="{{ url_for('interaction_new', id=customer.id) }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Loại tương tác <span style="color: var(--danger);">*</span></label>
+                    <select name="type" class="form-control" required>
+                        <option value="call">&#128222; Cuộc gọi (Call)</option>
+                        <option value="email">&#9993; Email</option>
+                        <option value="meeting">&#129309; Gặp mặt trực tiếp (Meeting)</option>
+                        <option value="note">&#128221; Ghi chú nội bộ (Note)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Người liên hệ trao đổi</label>
+                    <select name="contact_id" class="form-control">
+                        <option value="">-- Không chọn người liên hệ cụ thể --</option>
+                        {% for ct in contacts %}
+                        <option value="{{ ct.id }}">
+                            {{ ct.full_name }} {% if ct.position %}({{ ct.position }}){% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Tiêu đề tương tác <span style="color: var(--danger);">*</span></label>
+                <input type="text" name="subject" class="form-control" placeholder="Tóm tắt nội dung trao đổi" required>
+            </div>
+
+            <div class="form-group">
+                <label>Chi tiết trao đổi <span style="color: var(--danger);">*</span></label>
+                <textarea name="content" class="form-control" placeholder="Ghi lại các thông tin thảo luận, phản hồi của khách, thỏa thuận đạt được..." required></textarea>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Thời gian tương tác</label>
+                    <input type="datetime-local" name="interaction_time" class="form-control">
+                    <small style="color: var(--text-muted);">Để trống sẽ tự động lấy thời điểm hiện tại.</small>
+                </div>
+                <div class="form-group">
+                    <label>Ngày nhắc chăm sóc tiếp theo (Next Follow-up)</label>
+                    <input type="date" name="next_follow_up" class="form-control">
+                    <small style="color: var(--text-muted);">Sẽ hiển thị trên Bảng điều khiển khi đến hạn.</small>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Lưu tương tác vào Timeline</button>
+        </form>
+    </div>
+
+    <!-- Timeline list -->
+    {% if interactions %}
+    <div class="timeline">
+        {% for it in interactions %}
+        <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-content">
+                <div class="timeline-header">
+                    <div>
+                        <span class="badge badge-{{ it.type }}">
+                            {% if it.type == 'call' %}Cuộc gọi
+                            {% elif it.type == 'email' %}Email
+                            {% elif it.type == 'meeting' %}Gặp mặt
+                            {% else %}Ghi chú{% endif %}
+                        </span>
+                        <strong style="font-size: 0.95rem; margin-left: 0.35rem;">{{ it.subject }}</strong>
+                    </div>
+                    <span style="color: var(--text-muted); font-size: 0.82rem;">
+                        {{ it.interaction_time.strftime('%d/%m/%Y %H:%M') if it.interaction_time else '-' }}
+                    </span>
+                </div>
+
+                <div class="timeline-body">
+                    {{ it.content }}
+                </div>
+
+                <div class="timeline-footer">
+                    <div>
+                        <span>Người thực hiện: <strong>{{ it.user_name }}</strong></span>
+                        {% if it.contact_name %}
+                        &bull; <span>Người liên hệ: <strong>{{ it.contact_name }}</strong></span>
+                        {% endif %}
+                        {% if it.next_follow_up %}
+                        &bull; <span style="color: var(--warning); font-weight: 600;">
+                            Nhắc việc: {{ it.next_follow_up.strftime('%d/%m/%Y') }}
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <div style="display: flex; gap: 0.35rem;">
+                        {% if current_user.role == 'manager' or it.user_id == current_user.id %}
+                        <a href="{{ url_for('interaction_edit', id=it.id) }}" class="btn btn-secondary btn-sm">Sửa</a>
+                        {% endif %}
+
+                        {% if current_user.role == 'manager' %}
+                        <form action="{{ url_for('interaction_delete', id=it.id) }}" method="POST" onsubmit="return confirm('Xác nhận xóa tương tác này?');" style="display:inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
+        <p>Khách hàng này chưa có tương tác nào được ghi nhận.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

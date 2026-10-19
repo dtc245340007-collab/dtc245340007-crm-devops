@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}Danh sách Khách hàng - CRM{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+    <div>
+        <h1 style="font-size: 1.5rem; font-weight: 700;">Danh sách Khách hàng</h1>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">
+            {% if current_user.role == 'manager' %}
+            Tất cả khách hàng trong toàn công ty
+            {% else %}
+            Khách hàng được phân công cho bạn
+            {% endif %}
+            ({{ total_items }} khách hàng)
+        </p>
+    </div>
+    <a href="{{ url_for('customer_new') }}" class="btn btn-primary">
+        + Thêm khách hàng mới
+    </a>
+</div>
+
+<!-- Search & Filter Bar -->
+<div class="card" style="padding: 1rem;">
+    <div class="filter-bar">
+        <form method="GET" action="{{ url_for('customers_list') }}">
+            <input type="text" name="q" class="form-control search-input" placeholder="Tìm theo tên, mã KH, email, SĐT, công ty..." value="{{ query }}">
+            
+            <select name="status" class="form-control" style="width: auto;">
+                <option value="">-- Tất cả trạng thái --</option>
+                <option value="lead" {% if status_filter == 'lead' %}selected{% endif %}>Tiềm năng (Lead)</option>
+                <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Đang hoạt động (Active)</option>
+                <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Ngừng hoạt động (Inactive)</option>
+            </select>
+
+            <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+            {% if query or status_filter %}
+            <a href="{{ url_for('customers_list') }}" class="btn btn-secondary">Đặt lại</a>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<!-- Customers Table -->
+<div class="card">
+    {% if customers %}
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Mã KH</th>
+                    <th>Tên khách hàng</th>
+                    <th>Công ty</th>
+                    <th>Email</th>
+                    <th>Số điện thoại</th>
+                    <th>Trạng thái</th>
+                    {% if current_user.role == 'manager' %}
+                    <th>Nhân viên phụ trách</th>
+                    {% endif %}
+                    <th>Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in customers %}
+                <tr>
+                    <td><code>{{ c.customer_code }}</code></td>
+                    <td>
+                        <a href="{{ url_for('customer_detail', id=c.id) }}" style="color: var(--primary); font-weight: 600; text-decoration: none;">
+                            {{ c.name }}
+                        </a>
+                    </td>
+                    <td>{{ c.company or '-' }}</td>
+                    <td>{{ c.email or '-' }}</td>
+                    <td>{{ c.phone or '-' }}</td>
+                    <td>
+                        <span class="badge badge-{{ c.status }}">
+                            {{ c.status }}
+                        </span>
+                    </td>
+                    {% if current_user.role == 'manager' %}
+                    <td>
+                        {% if c.assigned_name %}
+                        <span class="badge badge-staff">{{ c.assigned_name }}</span>
+                        {% else %}
+                        <span style="color: var(--text-muted); font-size: 0.85rem;">Chưa phân công</span>
+                        {% endif %}
+                    </td>
+                    {% endif %}
+                    <td>
+                        <div style="display: flex; gap: 0.35rem;">
+                            <a href="{{ url_for('customer_detail', id=c.id) }}" class="btn btn-secondary btn-sm">Xem</a>
+                            <a href="{{ url_for('customer_edit', id=c.id) }}" class="btn btn-secondary btn-sm">Sửa</a>
+                            {% if current_user.role == 'manager' %}
+                            <form action="{{ url_for('customer_delete', id=c.id) }}" method="POST" onsubmit="return confirm('Bạn có chắc muốn xóa hoặc chuyển trạng thái khách hàng này?');" style="display:inline;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+    <div class="pagination">
+        {% if page > 1 %}
+        <a href="{{ url_for('customers_list', page=page-1, q=query, status=status_filter) }}">&laquo; Trước</a>
+        {% endif %}
+
+        {% for p in range(1, total_pages + 1) %}
+            {% if p == page %}
+            <span class="active">{{ p }}</span>
+            {% elif p <= 3 or p >= total_pages - 2 or (p >= page - 1 and p <= page + 1) %}
+            <a href="{{ url_for('customers_list', page=p, q=query, status=status_filter) }}">{{ p }}</a>
+            {% elif p == 4 or p == total_pages - 3 %}
+            <span>...</span>
+            {% endif %}
+        {% endfor %}
+
+        {% if page < total_pages %}
+        <a href="{{ url_for('customers_list', page=page+1, q=query, status=status_filter) }}">Sau &raquo;</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
+        <p>Không tìm thấy khách hàng nào phù hợp với điều kiện tìm kiếm.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -193,3 +193,72 @@ K?t qu? th?c thi m?u ???c l?u t?i `evidence/buoc5-logql.txt`.
    - Nginx Rate Limiting ?p d?ng t?i endpoint `/login`: Gi?i h?n 5 requests/ph?t (burst=5 nodelay).
    - T? request v??t ng??ng tr? ?i, Nginx ch? ??ng t? ch?i v?i m? **HTTP 429 Too Many Requests**, b?o v? tuy?t ??i backend web v? DB.
 4. **T?i li?u chi ti?t s? c?:** Xem t?i `docs/su-co-bruteforce.md`. Minh ch?ng ghi nh?n t?i `evidence/buoc5-sucodo.txt`.
+
+---
+
+## 7. C?c Bi?n ph?p C?ng c? An ninh To?n di?n (System Hardening)
+
+H? th?ng ???c ?p d?ng b? gi?i ph?p b?o m?t nhi?u l?p (Defense-in-Depth) theo c?c ti?u chu?n th?c h?nh t?t nh?t c?a CIS Docker Benchmark:
+
+### 7.1. Ch?y Container v?i Ng??i d?ng Kh?ng ??c quy?n (Non-Root Containers)
+- **Web App (`crm-web`)**: Kh?i t?o ng??i d?ng ri?ng `appuser` (UID `10001`, GID `10001`), gunicorn l?ng nghe c?ng kh?ng ??c quy?n 8000.
+- **Nginx Reverse Proxy (`crm-nginx`)**: S? d?ng base image `nginxinc/nginx-unprivileged:1.27-alpine` ch?y d??i user `nginx` (UID `101`, GID `101`), l?ng nghe n?i b? c?ng `8080` (HTTP) v? `8443` (HTTPS) map ra `80`/`443` tr?n host.
+- **pgAdmin (`crm-pgadmin`)**: Ch?y d??i user `pgadmin` (UID `5050`).
+- **Prometheus & Exporters**: Ch?y d??i user `nobody` (UID `65534`).
+- **Grafana**: Ch?y d??i user `grafana` (UID `472`).
+- **Loki & Alert-Sink**: Ch?y d??i user UID `10001`.
+- **Ngo?i l? k? thu?t:**
+  - `cadvisor` & `promtail`: B?t bu?c c?n quy?n ??c socket `/var/run/docker.sock` v? `/var/lib/docker/containers/` ?? thu th?p metrics v? nh?t k? container; ???c b?o v? b?ng c? mount ch? ??c (`:ro`) v? lo?i b? to?n b? capabilities.
+  - `db (postgres)`: Script kh?i t?o c?n quy?n volume ban ??u, sau ?? to?n b? ti?n tr?nh daemon ch?y ??c quy?n d??i user `postgres` (UID `999`).
+
+### 7.2. Ph?n t?ch M?ng N?i b? (Network Isolation)
+H? th?ng ph?n t?ch th?nh 3 m?ng Docker bridge ??c l?p:
+1. `crm_frontend`: M?ng c?ng khai n?i Nginx v?i Web, pgAdmin, Grafana v? Nginx Exporter.
+2. `crm_backend` (`internal: true`): M?ng n?i b? c? l?p tuy?t ??i, ch? cho ph?p k?t n?i gi?a Web, pgAdmin, Postgres Exporter v? Database `db`. Database **tuy?t ??i kh?ng tham gia m?ng frontend** v? **kh?ng publish b?t k? c?ng n?o** ra m?y ch? host.
+3. `crm_monitoring` (`internal: true`): M?ng n?i b? c? l?p cho h? t?ng Prometheus, Grafana, Exporters, Loki, Promtail v? Alert-Sink.
+
+### 7.3. Nguy?n t?c ??c quy?n T?i thi?u C? s? D? li?u (Database Least Privilege)
+- Role `crm_app` d?nh cho ?ng d?ng web:
+  - Ch? ???c c?p quy?n `SELECT, INSERT, UPDATE, DELETE` tr?n c?c b?ng schema `public`.
+  - Quy?n `USAGE, SELECT` tr?n c?c sequence.
+  - Thu h?i to?n b? quy?n DDL (`REVOKE CREATE ON SCHEMA public FROM PUBLIC; REVOKE ALL ON SCHEMA public FROM crm_app;`).
+  - Th? nghi?m c?c c?u l?nh `DROP TABLE` ho?c `CREATE TABLE` ??u b? PostgreSQL t? ch?i v?i l?i `permission denied` / `must be owner of table`.
+- Role `exporter` ch? ???c c?p quy?n `pg_monitor` ?? ??c metrics, kh?ng truy c?p d? li?u b?ng nghi?p v?.
+- Superuser `crm_admin` tuy?t ??i kh?ng c?u h?nh cho ?ng d?ng web.
+- M? h?a m?t kh?u ??t chu?n `scram-sha-256`.
+
+### 7.4. H?n ch? Quy?n H?n & T?i nguy?n Container
+- ?p d?ng `security_opt: [no-new-privileges:true]` tr?n to?n b? 12 containers ?? ng?n ch?n k? thu?t leo thang ??c quy?n (privilege escalation).
+- Lo?i b? to?n b? Linux capabilities (`cap_drop: [ALL]`) ??i v?i c?c containers ?ng d?ng, proxy, gi?m s?t.
+- ?p d?ng h? th?ng t?p tin ch? ??c (`read_only: true`) k?t h?p `tmpfs` t?m th?i (ch? cho ph?p ghi t?i `/tmp` v?i c?c c? an to?n `noexec,nosuid`).
+- Gi?i h?n t?i nguy?n ph?n c?ng (`mem_limit`, `cpus`) ?? ph?ng ch?ng t?n c?ng t? ch?i d?ch v? (DoS / resource exhaustion do noisy neighbor).
+
+### 7.5. Nginx Security Headers, Rate Limiting & ?n Th?ng tin
+- K?ch ho?t ??y ?? c?c HTTP Security Headers (`always`): `Strict-Transport-Security`, `X-Frame-Options SAMEORIGIN`, `X-Content-Type-Options nosniff`, `X-XSS-Protection "1; mode=block"`, `Content-Security-Policy`, `Referrer-Policy`, `Permissions-Policy`.
+- ?n th?ng tin phi?n b?n m?y ch?: `server_tokens off;`, `proxy_hide_header Server;`, `proxy_hide_header X-Powered-By;`.
+- Gi?i h?n t?n su?t ??ng nh?p (Rate Limiting) tr?n `/login`: 5 requests/ph?t (burst=5 nodelay), tr? v? m? `HTTP 429 Too Many Requests` khi b? t?n c?ng Brute-force.
+
+### 7.6. T??ng l?a M?y ch? (UFW Firewall)
+- Thi?t l?p t??ng l?a theo th? t? ti?u chu?n:
+  ```bash
+  sudo ufw allow 22/tcp
+  sudo ufw allow 80/tcp
+  sudo ufw allow 443/tcp
+  sudo ufw default deny incoming
+  sudo ufw default allow outgoing
+  sudo ufw --force enable
+  ```
+- **L?u ? k? thu?t v? Docker v? UFW:** M?c ??nh Docker can thi?p tr?c ti?p v?o chu?i iptables `DOCKER` c? th? ?i v?ng qua c?c quy t?c c?a UFW ??i v?i c?c c?ng ???c publish. Trong ki?n tr?c n?y, nguy c? ???c tri?t ti?u ho?n to?n nh? vi?c **ch? publish duy nh?t c?ng 80 v? 443 c?a Nginx**, to?n b? 11 d?ch v? c?n l?i (k? c? Database v? Prometheus/Grafana) n?m ho?n to?n trong c?c m?ng Docker n?i b? (`internal: true`) kh?ng c? b?t k? c?ng host n?o m? ra ngo?i.
+
+### 7.7. Qu?n l? B? m?t & M?t kh?u An to?n
+- M?i m?t kh?u v? kh?a b? m?t ???c l?u t?p trung trong `.env`, ph?n quy?n t?p `chmod 600 .env`.
+- T?p m?u `.env.example` ch? ch?a gi? tr? gi? l?p placeholder.
+- To?n b? l?ch s? git commit ???c r? so?t v? ki?m ch?ng s?ch s? (`git grep`), kh?ng r? r? b?t k? m?t kh?u ho?c kh?a b? m?t n?o.
+
+### 7.8. Ki?m ch?ng Th?c t?
+Ch?y t?p l?nh ki?m tra to?n di?n:
+```bash
+chmod +x scripts/generate_buoc6_evidence.sh
+./scripts/generate_buoc6_evidence.sh
+```
+K?t qu? ghi nh?n ??y ?? t?i `evidence/buoc6-hardening.txt`.

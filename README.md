@@ -89,3 +89,45 @@ docker compose up -d --build
   - Trình duyệt sẽ hiển thị cảnh báo chứng chỉ tự ký -> chọn *Nâng cao (Advanced)* > *Tiếp tục truy cập (Proceed)*.
 - **Trang quản trị pgAdmin:** `https://192.168.207.128/pgadmin/`
   - Đăng nhập bằng email và mật khẩu cấu hình trong `.env`.
+
+---
+
+## 5. Gi?m s?t H? th?ng (Prometheus & Grafana)
+
+H? th?ng t?ch h?p gi?m s?t to?n di?n v?i Prometheus v? Grafana theo m? h?nh m?ng n?i b? c? l?p (kh?ng expose port tr?c ti?p ra ngo?i, truy c?p Grafana qua Nginx reverse proxy):
+
+### 5.1. C?c d?ch v? gi?m s?t
+1. **Prometheus (`prom/prometheus:v2.54.1`)**: Thu th?p s? li?u chu k? 15s, l?u tr? tr?n volume `prometheus_data` retention 7 ng?y. Scrape 4 targets:
+   - `prometheus` (localhost:9090): Gi?m s?t tr?ng th?i Prometheus server.
+   - `cadvisor` (cadvisor:8080): Thu th?p CPU, RAM, Network I/O c?a to?n b? Docker container.
+   - `nginx` (nginx-exporter:9113): Thu th?p active connections, requests count t? `/nginx_status`.
+   - `postgres` (postgres-exporter:9187): K?t n?i PostgreSQL b?ng user `exporter` c? quy?n `pg_monitor`.
+2. **Grafana (`grafana/grafana:11.2.0`)**: 
+   - Truy c?p t?i: `https://192.168.207.128/grafana/` (ho?c `https://localhost/grafana/`).
+   - T?i kho?n ??ng nh?p qu?n tr? l?y t? `.env` (`GRAFANA_ADMIN_USER`, `GRAFANA_ADMIN_PASSWORD`).
+   - T? ??ng n?p s?n (Provisioning) Datasource Prometheus v? 3 Dashboards chuy?n d?ng trong th? m?c **CRM**:
+     - **CRM - Containers**: Gi?m s?t CPU/RAM/Network t?t c? containers (cAdvisor).
+     - **CRM - Nginx**: Gi?m s?t l?u l??ng k?t n?i, tr?ng th?i HTTP, requests/s.
+     - **CRM - PostgreSQL**: Gi?m s?t k?t n?i DB, transactions commit/rollback, cache hit ratio, k?ch th??c database.
+
+### 5.2. Kh?i t?o role cho Postgres Exporter (n?u d?ng database c? s?n)
+N?u volume c? s? d? li?u ?? t?n t?i t? tr??c, t?o role `exporter` v?i quy?n t?i thi?u:
+```bash
+docker compose exec db psql -U crm_admin -d crm -c "
+DO \$\$
+BEGIN
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'exporter') THEN
+    CREATE ROLE exporter WITH LOGIN PASSWORD 'M?t_kh?u_t?_env';
+    GRANT pg_monitor TO exporter;
+  END IF;
+END \$\$;
+"
+```
+
+### 5.3. Ki?m th? gi?m s?t
+Ch?y script ki?m tra tr?ng th?i targets v? sinh t?i:
+```bash
+chmod +x scripts/test_monitoring.sh
+./scripts/test_monitoring.sh
+```
+K?t qu? ghi nh?n t?i `evidence/buoc4-giamsat.txt`.

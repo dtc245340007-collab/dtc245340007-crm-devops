@@ -1,0 +1,12 @@
+crm_business:
+  query: "SELECT (SELECT count(*) FROM customers) AS customers, (SELECT count(*) FROM interactions) AS interactions, (SELECT count(*) FROM users) AS users"
+  metrics:
+    - customers:
+        usage: "GAUGE"
+        description: "Tong so khach hang trong he thong CRM"
+    - interactions:
+        usage: "GAUGE"
+        description: "Tong so tuong tac cham soc khach hang"
+    - users:
+        usage: "GAUGE"
+        description: "Tong so tai khoan nguoi dung"

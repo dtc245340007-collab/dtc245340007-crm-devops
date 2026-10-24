@@ -5,6 +5,7 @@ global:
 scrape_configs:
   # 1. Prometheus self-monitoring
   - job_name: 'prometheus'
+    metrics_path: '/prometheus/metrics'
     static_configs:
       - targets: ['localhost:9090']
 
